@@ -4,7 +4,7 @@
 import assert from 'node:assert/strict';
 import { DEFAULT_TUNING } from '../../src/geometry.ts';
 import { fixturePath } from '../lib/fixtures.ts';
-import { run } from '../lib/run.ts';
+import { expectReport, run } from '../lib/run.ts';
 
 // Word-height range within one printed line: x-height-only (~0.011) through ascender+descender
 // (~0.019) — measured ratio up to ~2.2, why lineHeightRatio 1.6 under-merges real same-line words.
@@ -25,16 +25,18 @@ describe('DEFAULT_TUNING.lineHeightRatio: pair-F1 sweep derivation', () => {
 
 describe('tuning: defaults unchanged when no flags are passed', () => {
   it('ocr-badge.pdf: badge still floats, heading still detected, paragraphs still joined', () => {
-    const { md, report } = run([fixturePath('ocr-badge.pdf'), '--stdout', '--ocr', '--json']);
-    assert.ok(report, 'expected a parsed JSON report');
+    const result = run([fixturePath('ocr-badge.pdf'), '--stdout', '--ocr', '--json']);
+    const report = expectReport(result);
+    const { md } = result;
     assert.equal(report.floats, 1);
     assert.match(md, /^#+\s*Trail Guide\s*$/im);
     assert.match(md, /Campers followed the marked trail past the old stone bridge today\.?/i);
   });
 
   it('ocr-single.pdf: heading still detected, paragraphs still joined', () => {
-    const { md, report } = run([fixturePath('ocr-single.pdf'), '--stdout', '--ocr', '--json']);
-    assert.ok(report, 'expected a parsed JSON report');
+    const result = run([fixturePath('ocr-single.pdf'), '--stdout', '--ocr', '--json']);
+    const report = expectReport(result);
+    const { md } = result;
     assert.equal(report.headings, 1);
     assert.match(md, /^#+\s*Mountain Journal\s*$/im);
     assert.match(md, /valley stretched beneath the morning clouds and pine trees\.?/i);
@@ -43,14 +45,12 @@ describe('tuning: defaults unchanged when no flags are passed', () => {
 
 describe('tuning: a flag demonstrably changes behavior', () => {
   it('--float-max-words=0 on ocr-badge.pdf: the badge is no longer floated', () => {
-    const { report } = run([fixturePath('ocr-badge.pdf'), '--stdout', '--ocr', '--json', '--float-max-words=0']);
-    assert.ok(report, 'expected a parsed JSON report');
+    const report = expectReport(run([fixturePath('ocr-badge.pdf'), '--stdout', '--ocr', '--json', '--float-max-words=0']));
     assert.equal(report.floats, 0, 'badge fragment should fail the word-count check and land in body flow instead');
   });
 
   it('--heading-scale=99 on ocr-single.pdf: no heading-size line clears the (absurdly high) bar', () => {
-    const { report } = run([fixturePath('ocr-single.pdf'), '--stdout', '--ocr', '--json', '--heading-scale=99']);
-    assert.ok(report, 'expected a parsed JSON report');
+    const report = expectReport(run([fixturePath('ocr-single.pdf'), '--stdout', '--ocr', '--json', '--heading-scale=99']));
     assert.equal(report.headings, 0);
   });
 });

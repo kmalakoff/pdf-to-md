@@ -4,15 +4,16 @@
 import assert from 'node:assert/strict';
 import { HAS_DICT } from '../lib/dict.ts';
 import { fixturePath } from '../lib/fixtures.ts';
-import { run } from '../lib/run.ts';
+import { expectReport, run } from '../lib/run.ts';
 
 function hasWord(md: string, word: string): boolean {
   return new RegExp(`\\b${word}\\b`, 'i').test(md);
 }
 
 describe('OCR path: ocr-single.pdf', () => {
-  const { md, report } = run([fixturePath('ocr-single.pdf'), '--stdout', '--ocr', '--json']);
-  assert.ok(report, 'expected a parsed JSON report');
+  const result = run([fixturePath('ocr-single.pdf'), '--stdout', '--ocr', '--json']);
+  const report = expectReport(result);
+  const { md } = result;
 
   it('recognizes every expected word', () => {
     // 'creative' is excluded here — it's a line-final OCR hyphen split ("creat-" / "ive")
@@ -78,8 +79,9 @@ describe('OCR path: ocr-twocol.pdf', () => {
 });
 
 describe('OCR path: ocr-badge.pdf', () => {
-  const { md, report } = run([fixturePath('ocr-badge.pdf'), '--stdout', '--ocr', '--json']);
-  assert.ok(report, 'expected a parsed JSON report');
+  const result = run([fixturePath('ocr-badge.pdf'), '--stdout', '--ocr', '--json']);
+  const report = expectReport(result);
+  const { md } = result;
 
   it('recognizes the body paragraph words and the heading', () => {
     // 'creative' excluded — same hyphen-split reason as ocr-single.pdf's test above.

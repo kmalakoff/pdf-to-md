@@ -12,7 +12,7 @@ import { UNSTRUCTURED_WORDLIKE_FRACTION } from '../../src/emit.ts';
 import { LOW_CONFIDENCE_THRESHOLD } from '../../src/report.ts';
 import { debugWordsPath, readDebugWords } from '../lib/debug-words.ts';
 import { fixturePath } from '../lib/fixtures.ts';
-import { run } from '../lib/run.ts';
+import { expectReport, run } from '../lib/run.ts';
 
 function normalize(s: string): string {
   return s.toLowerCase().replace(/[^a-z0-9\s]/g, '');
@@ -20,8 +20,9 @@ function normalize(s: string): string {
 
 describe('OCR path: ocr-chart.pdf (review markers on a chart-page scatter)', () => {
   const dump = debugWordsPath();
-  const { md, report } = run([fixturePath('ocr-chart.pdf'), '--stdout', '--ocr', '--json', `--debug-words=${dump}`]);
-  assert.ok(report, 'expected a parsed JSON report');
+  const result = run([fixturePath('ocr-chart.pdf'), '--stdout', '--ocr', '--json', `--debug-words=${dump}`]);
+  const report = expectReport(result);
+  const { md } = result;
 
   it('marks the scattered numerals as a review block, in the documented format', () => {
     const reviewLines = md.split('\n').filter((l) => l.startsWith('> [review: unstructured labels]'));
@@ -113,8 +114,9 @@ describe('review marker via a constructed word dump (--words-json)', () => {
   const chartLikePage: DumpWord[] = [...dumpLine(1, 0.85, 0.1, '4.1 27 9.3 51.6 12'), ...dumpLine(1, 0.82, 0.1, '33.4 6 44.2 19 8.7'), ...dumpLine(1, 0.5, 0.1, 'The quiet harbor filled slowly'), ...dumpLine(1, 0.475, 0.1, 'with morning light and gulls.')];
 
   it('returns a pure-numeral block as a review line, unlike the prose beside it', () => {
-    const { md, report } = runWordsJson(chartLikePage);
-    assert.ok(report, 'expected a parsed JSON report');
+    const result = runWordsJson(chartLikePage);
+    const report = expectReport(result);
+    const { md } = result;
     assert.match(md, /^> \[review: unstructured labels\] 4\.1 27 9\.3 51\.6 12 33\.4 6 44\.2 19 8\.7$/m);
     assert.doesNotMatch(md, />\s*\[review:[^\]]*\][^\n]*quiet harbor/i);
     assert.match(md, /^The quiet harbor filled slowly with morning light and gulls\.?$/m);
@@ -130,8 +132,9 @@ describe('review marker fraction rule (regression: single stray word-like token)
     // 1 word-like token ("tes") / 10 total = 0.1, well below 0.4 — same
     // shape as the real unmarked line this bug produced.
     const page: DumpWord[] = dumpLine(1, 0.5, 0.1, '205 57 tes 36 343 53 60 52 464 58');
-    const { md, report } = runWordsJson(page);
-    assert.ok(report, 'expected a parsed JSON report');
+    const result = runWordsJson(page);
+    const report = expectReport(result);
+    const { md } = result;
     assert.match(md, /^> \[review: unstructured labels\] 205 57 tes 36 343 53 60 52 464 58$/m);
     assert.doesNotMatch(md, /^205 57 tes 36 343 53 60 52 464 58$/m, 'must not appear as a bare, unmarked paragraph');
     assert.ok(report.reviewBlocks >= 1);
@@ -141,8 +144,9 @@ describe('review marker fraction rule (regression: single stray word-like token)
     // Realistic worst case for a prose false-positive: prose with inline numerals scattered
     // through it. Measured fraction 11 word-like / 16 total = 0.6875, comfortably above 0.4.
     const page: DumpWord[] = dumpLine(1, 0.5, 0.1, 'Because you learn through the 1 and have the life experience 3 to back it up');
-    const { md, report } = runWordsJson(page);
-    assert.ok(report, 'expected a parsed JSON report');
+    const result = runWordsJson(page);
+    const report = expectReport(result);
+    const { md } = result;
     assert.match(md, /^Because you learn through the 1 and have the life experience 3 to back it up\.?$/m);
     assert.doesNotMatch(md, />\s*\[review:[^\]]*\][^\n]*Because you learn/i);
     assert.equal(report.reviewBlocks, 0);
@@ -154,8 +158,9 @@ describe('review marker fraction rule (regression: single stray word-like token)
     // "one 1 two 2 three 3 four 4 5 6" -> 4 word-like ("one","two","three","four") / 10 = 0.4 exactly.
     assert.equal(UNSTRUCTURED_WORDLIKE_FRACTION, 0.4);
     const page: DumpWord[] = dumpLine(1, 0.5, 0.1, 'one 1 two 2 three 3 four 4 5 6');
-    const { md, report } = runWordsJson(page);
-    assert.ok(report, 'expected a parsed JSON report');
+    const result = runWordsJson(page);
+    const report = expectReport(result);
+    const { md } = result;
     assert.match(md, /^one 1 two 2 three 3 four 4 5 6\.?$/m);
     assert.equal(report.reviewBlocks, 0);
   });
@@ -163,8 +168,9 @@ describe('review marker fraction rule (regression: single stray word-like token)
   it('IS unstructured just below the threshold (fraction 0.3 < 0.4)', () => {
     // "one 1 two 2 three 3 4 5 6 7" -> 3 word-like ("one","two","three") / 10 = 0.3.
     const page: DumpWord[] = dumpLine(1, 0.5, 0.1, 'one 1 two 2 three 3 4 5 6 7');
-    const { md, report } = runWordsJson(page);
-    assert.ok(report, 'expected a parsed JSON report');
+    const result = runWordsJson(page);
+    const report = expectReport(result);
+    const { md } = result;
     assert.match(md, /^> \[review: unstructured labels\] one 1 two 2 three 3 4 5 6 7$/m);
     assert.ok(report.reviewBlocks >= 1);
   });

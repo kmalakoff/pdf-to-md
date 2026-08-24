@@ -7,11 +7,12 @@ import os from 'node:os';
 import path from 'node:path';
 import { MAX_GUTTER_INK_FRAC, MIN_COL_SHARE, MIN_COL_WORDS } from '../../src/geometry.ts';
 import { fixturePath } from '../lib/fixtures.ts';
-import { run } from '../lib/run.ts';
+import { expectReport, run } from '../lib/run.ts';
 
 describe('OCR path: ocr-colbreak.pdf', () => {
-  const { md, report } = run([fixturePath('ocr-colbreak.pdf'), '--stdout', '--ocr', '--json']);
-  assert.ok(report, 'expected a parsed JSON report');
+  const result = run([fixturePath('ocr-colbreak.pdf'), '--stdout', '--ocr', '--json']);
+  const report = expectReport(result);
+  const { md } = result;
 
   // --- passing: what the tool already gets right -------------------------
 
@@ -117,8 +118,9 @@ describe('column break via constructed word dumps (--words-json)', () => {
   ];
 
   it('declines to join a capitalized continuation and FLAGS it via danglingLong', () => {
-    const { md, report } = runWordsJson(capitalPage);
-    assert.ok(report, 'expected a parsed JSON report');
+    const capitalResult = runWordsJson(capitalPage);
+    const report = expectReport(capitalResult);
+    const { md } = capitalResult;
     assert.doesNotMatch(md, /waited a long while for Sherlock/i);
     assert.ok(report.pageStats[0].danglingLong >= 1, 'expected the dangling left column counted as danglingLong');
   });
@@ -128,8 +130,9 @@ describe('column break via constructed word dumps (--words-json)', () => {
   const gutterFragmentPage: DumpWord[] = [...joinPage, { page: 1, text: '1/3', x: 0.72, y: 0.86, w: 0.18, h: 0.064 }];
 
   it('routes a display-size junk fragment to floats, not body flow', () => {
-    const { md, report } = runWordsJson(gutterFragmentPage);
-    assert.ok(report, 'expected a parsed JSON report');
+    const gutterResult = runWordsJson(gutterFragmentPage);
+    const report = expectReport(gutterResult);
+    const { md } = gutterResult;
     assert.equal(report.floats, 1, 'the display "1/3" should be recovered as a float');
     assert.match(md, /^>\s*\[floats\].*1\/3/im);
     const body = md

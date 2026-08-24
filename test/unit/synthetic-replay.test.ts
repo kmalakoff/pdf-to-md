@@ -11,20 +11,23 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import cr from 'cr';
 import { auditWords } from '../../src/index.ts';
 import { OUTPUT_VERSION } from '../../src/report.ts';
-import { run } from '../lib/run.ts';
+import { expectReport, run } from '../lib/run.ts';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const WORDS = path.join(here, '..', 'fixtures', 'synthetic-replay.words.jsonl');
 const EXPECTED_MD = path.join(here, '..', 'fixtures', 'synthetic-replay.expected.md');
 
 describe('synthetic replay gate: frozen word dump -> exact frozen markdown', () => {
-  const { status, stderr, md, report } = run([`--words-json=${WORDS}`, '--stdout', '--ocr', '--json']);
+  const runResult = run([`--words-json=${WORDS}`, '--stdout', '--ocr', '--json']);
+  const { status, stderr, md } = runResult;
 
   it('reproduces the frozen expected markdown EXACTLY (geometry/emission drift gate)', () => {
     assert.equal(status, 0, stderr);
-    assert.equal(md, readFileSync(EXPECTED_MD, 'utf8'), "replayed markdown differs from test/fixtures/synthetic-replay.expected.md — if this change is deliberate, refreeze the expectation AND bump OUTPUT_VERSION (see this file's header)");
+    // cr(): git autocrlf checks the frozen file out with CRLF on Windows; the CLI always emits LF.
+    assert.equal(md, cr(readFileSync(EXPECTED_MD, 'utf8')), "replayed markdown differs from test/fixtures/synthetic-replay.expected.md — if this change is deliberate, refreeze the expectation AND bump OUTPUT_VERSION (see this file's header)");
   });
 
   it('severity-1: MISSING=0 via the shipped auditor against the frozen pair', () => {
@@ -34,7 +37,7 @@ describe('synthetic replay gate: frozen word dump -> exact frozen markdown', () 
   });
 
   it('the report reflects every covered behavior (floats, review, low-confidence, headings)', () => {
-    assert.ok(report, 'expected a parsed JSON report');
+    const report = expectReport(runResult);
     assert.equal(report.outputVersion, OUTPUT_VERSION);
     assert.equal(report.path, 'ocr');
     assert.equal(report.pages, 4);

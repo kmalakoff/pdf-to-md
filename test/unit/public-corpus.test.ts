@@ -11,7 +11,7 @@ import path from 'node:path';
 import { auditWords } from '../../src/audit.ts';
 import { CACHE_DIR, CORPUS, corpusPath } from '../lib/corpus.ts';
 import { debugWordsPath, readDebugWords } from '../lib/debug-words.ts';
-import { run } from '../lib/run.ts';
+import { expectReport, run } from '../lib/run.ts';
 
 // Same normalization as no-silent-loss.test.ts's severity-1 check — see there for the rule.
 function normalize(s: string): string {
@@ -27,8 +27,7 @@ describe('public corpus (Phase T): real documents, fetched + checksum-verified o
       return;
     }
 
-    const { report } = run([file, '--stdout', '--json']);
-    assert.ok(report, 'expected a parsed JSON report');
+    const report = expectReport(run([file, '--stdout', '--json']));
     // Floors sit well below the measured run (16 pages, 42,702 chars, 2,669 chars/page,
     // 125 paragraphs, 0 junk headings — see test/lib/corpus.ts's CORPUS entry) so they only trip on a real regression.
     assert.equal(report.pages, 16, `expected 16 pages, got ${report.pages}`);
@@ -49,8 +48,9 @@ describe('public corpus (Phase T): real documents, fetched + checksum-verified o
     // Single page, forced OCR (~6s measured) — one CLI run yields both the QA report and
     // (via --debug-words=FILE) the word dump, so the severity-1 check below reuses it.
     const dump = debugWordsPath();
-    const { md, report } = run([file, '--stdout', '--ocr', `--debug-words=${dump}`, '--json']);
-    assert.ok(report, 'expected a parsed JSON report');
+    const result = run([file, '--stdout', '--ocr', `--debug-words=${dump}`, '--json']);
+    const report = expectReport(result);
+    const { md } = result;
     assert.equal(report.path, 'ocr');
     // Floors sit well under the measured, repeat-verified values (304 recognized words, 1,504 chars).
     assert.ok(report.chars > 800, `expected > 800 recognized chars (measured 1504), got ${report.chars}`);
@@ -81,8 +81,9 @@ describe('public corpus (Phase T): real documents, fetched + checksum-verified o
     // Forced OCR despite a good text layer — this fixture exists for the OCR path's chart
     // handling (test/lib/corpus.ts). One run (~8.4s measured) yields both the QA report and the word dump.
     const dump = debugWordsPath();
-    const { md, report } = run([file, '--stdout', '--ocr', `--debug-words=${dump}`, '--json']);
-    assert.ok(report, 'expected a parsed JSON report');
+    const result = run([file, '--stdout', '--ocr', `--debug-words=${dump}`, '--json']);
+    const report = expectReport(result);
+    const { md } = result;
     assert.equal(report.path, 'ocr');
     assert.equal(report.pages, 2, `expected 2 pages, got ${report.pages}`);
     assert.equal(report.sparse, false);
@@ -118,8 +119,9 @@ describe('public corpus (Phase T): real documents, fetched + checksum-verified o
     // This is THE regression test for the wasmUrl fix (src/pdf-open.ts): without wasmUrl wired
     // into pdfjs 6.x's getDocument(), this CCITTFax page decodes BLANK and every assertion below fails.
     const dump = debugWordsPath();
-    const { md, report } = run([file, '--stdout', '--ocr', `--debug-words=${dump}`, '--json']);
-    assert.ok(report, 'expected a parsed JSON report');
+    const result = run([file, '--stdout', '--ocr', `--debug-words=${dump}`, '--json']);
+    const report = expectReport(result);
+    const { md } = result;
     assert.equal(report.path, 'ocr');
     assert.equal(report.pages, 1, `expected 1 page, got ${report.pages}`);
     // Floor sits well under the measured value (~4,519 chars) — trips hard if the page decoded blank.
@@ -149,8 +151,9 @@ describe('public corpus (Phase T): real documents, fetched + checksum-verified o
       return;
     }
 
-    const { md, report } = run([file, '--stdout', '--json']);
-    assert.ok(report, 'expected a parsed JSON report');
+    const result = run([file, '--stdout', '--json']);
+    const report = expectReport(result);
+    const { md } = result;
     assert.equal(report.path, 'text');
     assert.equal(report.pages, 23, `expected 23 pages, got ${report.pages}`);
     assert.ok(report.paragraphs > 200, `expected > 200 paragraphs (measured 434), got ${report.paragraphs}`);
@@ -171,8 +174,9 @@ describe('public corpus (Phase T): real documents, fetched + checksum-verified o
     }
 
     // Text path only (openDocument() carries no cMapUrl) — deliberately not OCR'd, the engine is English-only.
-    const { md, report } = run([file, '--stdout', '--json']);
-    assert.ok(report, 'expected a parsed JSON report');
+    const result = run([file, '--stdout', '--json']);
+    const report = expectReport(result);
+    const { md } = result;
     assert.equal(report.path, 'text');
     assert.equal(report.pages, 110, `expected 110 pages, got ${report.pages}`);
 
@@ -189,8 +193,7 @@ describe('public corpus (Phase T): real documents, fetched + checksum-verified o
       return;
     }
 
-    const { report } = run([file, '--stdout', '--json']);
-    assert.ok(report, 'expected a parsed JSON report');
+    const report = expectReport(run([file, '--stdout', '--json']));
     assert.equal(report.path, 'text');
     assert.equal(report.pages, 13, `expected 13 pages, got ${report.pages}`);
     assert.ok((report.listItems ?? 0) > 0, `expected listItems > 0 (measured 12), got ${report.listItems}`);
@@ -204,8 +207,7 @@ describe('public corpus (Phase T): real documents, fetched + checksum-verified o
       return;
     }
 
-    const { report } = run([file, '--stdout', '--json']);
-    assert.ok(report, 'expected a parsed JSON report');
+    const report = expectReport(run([file, '--stdout', '--json']));
     assert.equal(report.path, 'text');
     assert.equal(report.pages, 11, `expected 11 pages, got ${report.pages}`);
     assert.ok((report.headingSizes?.length ?? 0) >= 4, `expected >= 4 distinct heading sizes (measured 5: 22/20/18/16/14pt), got ${report.headingSizes?.length}`);

@@ -1,5 +1,5 @@
 // fixtures.ts — builds and caches the suite's 12 synthetic PDFs (no binary
-// fixture is committed). node:test runs files concurrently, so generation is guarded by an atomic mkdir lock; other workers poll for the "done" marker.
+// fixture is committed). mocha runs one serial process, but concurrent test invocations can race on a cold cache, so generation is guarded by an atomic mkdir lock; the loser polls for the "done" marker.
 import { execFileSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import os from 'node:os';
@@ -59,7 +59,8 @@ export function fixturesDir(): string {
     const deadline = Date.now() + 60_000;
     while (!existsSync(marker)) {
       if (Date.now() > deadline) throw new Error('timed out waiting for fixture generation by another test worker');
-      execFileSync('sleep', ['0.2']);
+      // Synchronous 200ms sleep without a child process — spawning `sleep` is POSIX-only (ENOENT on Windows).
+      Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 200);
     }
   }
 

@@ -9,6 +9,7 @@ import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import cr from 'cr';
 import { auditWords } from '../../src/index.ts';
 import { run } from '../lib/run.ts';
 
@@ -35,7 +36,8 @@ describe('real replay gate: 100-page real-OCR word dump -> markdown within diff 
   });
 
   it('stays within the diff-line bound against the frozen replay', () => {
-    const frozen = readFileSync(FROZEN_MD, 'utf8').split('\n');
+    // cr(): git autocrlf checks the frozen file out with CRLF on Windows; the CLI always emits LF.
+    const frozen = cr(readFileSync(FROZEN_MD, 'utf8')).split('\n');
     const replayed = md.split('\n');
     const frozenSet = new Set(frozen);
     const replaySet = new Set(replayed);

@@ -4,14 +4,15 @@
 import assert from 'node:assert/strict';
 import { HAS_DICT } from '../lib/dict.ts';
 import { fixturePath } from '../lib/fixtures.ts';
-import { run } from '../lib/run.ts';
+import { expectReport, run } from '../lib/run.ts';
 
 // Hyphen-rejoin (src/markdown.ts, same DICT_PATH as src/emit.ts) only closes a line-final
 // hyphen when the joined form is a real dictionary word — no dictionary means every hyphen stays unresolved (a visible '-' beats a silent join).
 
 describe('text path: text-single.pdf', () => {
-  const { md, report } = run([fixturePath('text-single.pdf'), '--stdout', '--json']);
-  assert.ok(report, 'expected a parsed JSON report');
+  const result = run([fixturePath('text-single.pdf'), '--stdout', '--json']);
+  const report = expectReport(result);
+  const { md } = result;
 
   it('emits the heading as a real #-heading', () => {
     assert.match(md, /^# Garden Notes$/m);
@@ -45,8 +46,9 @@ describe('text path: text-single.pdf', () => {
 });
 
 describe('text path: text-twocol.pdf', () => {
-  const { md, report } = run([fixturePath('text-twocol.pdf'), '--stdout', '--json']);
-  assert.ok(report, 'expected a parsed JSON report');
+  const result = run([fixturePath('text-twocol.pdf'), '--stdout', '--json']);
+  const report = expectReport(result);
+  const { md } = result;
 
   it('contains every expected sentence from both columns', () => {
     assert.match(md, /The old library sat quiet beside the tall oak trees\./);

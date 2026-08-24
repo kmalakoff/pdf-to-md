@@ -7,7 +7,7 @@
 import assert from 'node:assert/strict';
 import { SPARSE_RETRY_PROSE_FRACTION, shouldRetrySparse } from '../../src/engines/tesseract.ts';
 import { fixturePath } from '../lib/fixtures.ts';
-import { run } from '../lib/run.ts';
+import { expectReport, run } from '../lib/run.ts';
 
 // Real p4 (chart page), PSM.AUTO vs PSM.SPARSE_TEXT, at OCR_RENDER_DPI
 // (288): word count and recall against a 94-word ground truth.
@@ -109,8 +109,9 @@ describe('OCR path: ocr-chart.pdf — retry attempted but ties (must-not-over-tr
 // ocr-chart-only.pdf (fixture 12) is denser than ocr-chart.pdf's scatter and has NO prose at
 // all, which measurably makes PSM.AUTO under-recognize it — the positive end-to-end case: retry must fire AND win.
 describe('OCR path: ocr-chart-only.pdf (numerals only, no prose — the retry must fire AND win)', () => {
-  const { md, report, stderr } = run([fixturePath('ocr-chart-only.pdf'), '--stdout', '--ocr', '--json']);
-  assert.ok(report, 'expected a parsed JSON report');
+  const result = run([fixturePath('ocr-chart-only.pdf'), '--stdout', '--ocr', '--json']);
+  const report = expectReport(result);
+  const { md, stderr } = result;
 
   it('emits the sparse-retry diagnostic, in the documented format, with SPARSE_TEXT finding more words than AUTO', () => {
     const match = stderr.match(/p1: chart-like page \(prose fraction ([\d.]+)\) — retried with sparse-text segmentation, (\d+) -> (\d+) words/);

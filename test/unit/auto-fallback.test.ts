@@ -3,15 +3,15 @@
 
 import assert from 'node:assert/strict';
 import { fixturePath } from '../lib/fixtures.ts';
-import { run } from '../lib/run.ts';
+import { expectReport, run } from '../lib/run.ts';
 
 const fixture = fixturePath('ocr-single.pdf');
 
 describe('auto OCR fallback', () => {
   it('without --ocr: prints a fallback notice on stderr and marks ocrFallback in the JSON report', () => {
-    const { stderr, report } = run([fixture, '--stdout', '--json']);
-    assert.match(stderr, /falling back to OCR/i);
-    assert.ok(report, 'expected a parsed JSON report');
+    const result = run([fixture, '--stdout', '--json']);
+    const report = expectReport(result);
+    assert.match(result.stderr, /falling back to OCR/i);
     assert.equal(report.ocrFallback, true);
     assert.equal(report.path, 'ocr');
     // and the fallback actually recovered real content, not an empty page
@@ -30,9 +30,9 @@ describe('auto OCR fallback', () => {
   });
 
   it('with --no-ocr: never falls back, and reports sparse near-empty output', () => {
-    const { stderr, report } = run([fixture, '--stdout', '--no-ocr', '--json']);
-    assert.doesNotMatch(stderr, /falling back to OCR/i);
-    assert.ok(report, 'expected a parsed JSON report');
+    const result = run([fixture, '--stdout', '--no-ocr', '--json']);
+    const report = expectReport(result);
+    assert.doesNotMatch(result.stderr, /falling back to OCR/i);
     assert.equal(report.sparse, true);
     assert.ok(report.chars < 20, `expected near-empty text-layer output, got ${report.chars} chars`);
   });

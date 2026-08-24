@@ -7,7 +7,7 @@
 import assert from 'node:assert/strict';
 import { debugWordsPath, readDebugWords } from '../lib/debug-words.ts';
 import { fixturePath } from '../lib/fixtures.ts';
-import { run } from '../lib/run.ts';
+import { expectReport, run } from '../lib/run.ts';
 
 function normalize(s: string): string {
   return s.toLowerCase().replace(/[^a-z0-9\s]/g, '');
@@ -15,8 +15,9 @@ function normalize(s: string): string {
 
 describe('OCR path: ocr-book.pdf (synthetic two-column scanned book)', () => {
   const dump = debugWordsPath();
-  const { md, report } = run([fixturePath('ocr-book.pdf'), '--stdout', '--ocr', '--json', `--debug-words=${dump}`]);
-  assert.ok(report, 'expected a parsed JSON report');
+  const result = run([fixturePath('ocr-book.pdf'), '--stdout', '--ocr', '--json', `--debug-words=${dump}`]);
+  const report = expectReport(result);
+  const { md } = result;
 
   it('emits all three page markers', () => {
     for (const n of [1, 2, 3]) {

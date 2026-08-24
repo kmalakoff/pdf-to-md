@@ -6,14 +6,15 @@
 
 import assert from 'node:assert/strict';
 import { fixturePath } from '../lib/fixtures.ts';
-import { run } from '../lib/run.ts';
+import { expectReport, run } from '../lib/run.ts';
 
 const fixture = fixturePath('text-hybrid.pdf');
 
 describe('hybrid-page detection: text-hybrid.pdf', () => {
   it('text path: warns on stderr and flags the page in the JSON report', () => {
-    const { md, stderr, report } = run([fixture, '--stdout', '--page-markers', '--json']);
-    assert.ok(report, 'expected a parsed JSON report');
+    const result = run([fixture, '--stdout', '--page-markers', '--json']);
+    const report = expectReport(result);
+    const { md, stderr } = result;
     // The warning is advisory, not prescriptive — a prescriptive rerun instruction would actively
     // degrade correct text-layer output on a page with a large image but NO baked-in text ("I" -> "|", stray em-dashes). It tells the caller to COMPARE, not replace.
     assert.match(stderr, /p1: text layer used but page carries large image\(s\); if it has baked-in text this output won't have it — compare \(don't blindly replace\) against --pages 1 --ocr, which can itself introduce errors/);

@@ -36,12 +36,13 @@ export async function openDocument(src: string): Promise<PDFDocumentProxy> {
 //
 // GOTCHA: despite the `...Url` name, pdfjs's Node loader does `fs.readFile`
 // on the string directly — a `file://` URL silently fails every lookup (only a stderr warning); plain filesystem paths are required.
+// The trailing "/" must be literal (pdfjs rejects a trailing "\"); Windows' fs accepts "/" after a "\" path.
 const PDFJS_DIST_ROOT = path.dirname(resolvePackagePath('pdfjs-dist/package.json'));
-const CMAP_URL = path.join(PDFJS_DIST_ROOT, 'cmaps') + path.sep;
-const STANDARD_FONT_DATA_URL = path.join(PDFJS_DIST_ROOT, 'standard_fonts') + path.sep;
+const CMAP_URL = `${path.join(PDFJS_DIST_ROOT, 'cmaps')}/`;
+const STANDARD_FONT_DATA_URL = `${path.join(PDFJS_DIST_ROOT, 'standard_fonts')}/`;
 // JBIG2/JPEG2000 decoding lives in pdfjs's WASM modules: without this, bitonal
 // scans (the usual encoding for B&W page images) decode to a BLANK page and OCR sees nothing.
-const WASM_URL = path.join(PDFJS_DIST_ROOT, 'wasm') + path.sep;
+const WASM_URL = `${path.join(PDFJS_DIST_ROOT, 'wasm')}/`;
 
 /**
  * Open a PDF for rendering (raster.ts/tesseract.ts's seam): cMaps + standard
