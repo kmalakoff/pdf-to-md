@@ -1,6 +1,6 @@
 {
   "name": "@effortlessmotion/pdf-to-md",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Extract PDFs to structured markdown: text layer via pdf.js, OCR fallback for image-only pages, pure npm and cross-platform",
   "keywords": [
     "pdf",
