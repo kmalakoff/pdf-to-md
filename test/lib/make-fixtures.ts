@@ -1,13 +1,15 @@
 #!/usr/bin/env node
 import { mkdirSync, writeFileSync } from 'node:fs';
+import { createRequire } from 'node:module';
 import path from 'node:path';
 import type { SKRSContext2D } from '@napi-rs/canvas';
-import { createCanvas } from '@napi-rs/canvas';
+import { createCanvas, GlobalFonts } from '@napi-rs/canvas';
 // make-fixtures.ts — deterministically draws the test suite's fixture PDFs.
 //   node test/lib/make-fixtures.ts <outDir>
 
 // Canvas text rendering (Skia) isn't byte-identical across renderers, so
 // font sizes/spacing below are tuned for OCR fidelity where the fixture needs it — never a test assertion.
+// The typeface itself is pinned (see canvasFont) so the glyphs, at least, are the same everywhere.
 
 // pdf-lib assembles PDFs (pure TS); @napi-rs/canvas renders "ocr" fixtures'
 // raster content — the same renderer src/raster.ts uses in production.
@@ -97,10 +99,21 @@ function toPx(scale: number, pageHeightPt: number, xPt: number, yPt: number): { 
   return { x: xPt * scale, y: (pageHeightPt - yPt) * scale };
 }
 
+// The OCR assertions downstream are calibrated against these exact glyphs, so
+// the bitmaps have to be the same on every machine. A system font stack cannot
+// promise that: macOS resolves Helvetica, a CI Linux runner has neither
+// Helvetica nor Arial and silently falls back to whatever it does have, and
+// @napi-rs/canvas will not synthesise a bold Helvetica even where Helvetica
+// exists. Draw with the Liberation Sans that pdfjs-dist (already a runtime
+// dependency) ships instead: metric-compatible with Arial/Helvetica, and the
+// same substitution pdf.js itself makes for them, so no binary joins the repo.
+const fixtureFonts = path.join(path.dirname(createRequire(import.meta.url).resolve('pdfjs-dist/package.json')), 'standard_fonts');
+for (const file of ['LiberationSans-Regular.ttf', 'LiberationSans-Bold.ttf']) {
+  if (!GlobalFonts.registerFromPath(path.join(fixtureFonts, file))) throw new Error(`could not register fixture font ${file}`);
+}
+
 function canvasFont(sizePx: number, bold: boolean): string {
-  // "Helvetica" resolves to system PostScript outlines where available;
-  // Arial is a same-metrics fallback otherwise.
-  return `${bold ? 'bold ' : ''}${sizePx}px Helvetica, Arial, sans-serif`;
+  return `${bold ? 'bold ' : ''}${sizePx}px "Liberation Sans"`;
 }
 
 interface RasterSurface extends Surface {
@@ -916,9 +929,13 @@ async function main() {
   // for tesseract.ts's adaptive PSM.SPARSE_TEXT retry (SPARSE_RETRY_PROSE_FRACTION); fixture 11 triggers it too but ties on word count, never "sparse wins".
 
   // Denser/wider (8x5=40 numerals) so PSM.AUTO genuinely under-recognizes
-  // (12/40) while PSM.SPARSE_TEXT recovers all 40 — mirroring a real chart page's failure mode.
+  // while PSM.SPARSE_TEXT recovers all 40 — mirroring a real chart page's failure mode.
+  // numSize is the knob that holds that gap open, and it is narrow: measured
+  // against the pinned typeface (see canvasFont), 20-26pt lets AUTO read the whole
+  // page on its own (no retry to observe, and at 26 it misreads 61 as 601), while
+  // 14pt starves SPARSE_TEXT too. 18pt sits in the window at AUTO 38 -> SPARSE 40.
   await writeImagePDF(path.join(outDir, 'ocr-chart-only.pdf'), (s) => {
-    const numSize = 26;
+    const numSize = 18;
     const rows: Array<{ y: number; xs: number[]; nums: string[] }> = [
       {
         y: 700,

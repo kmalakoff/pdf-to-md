@@ -84,6 +84,16 @@ export const MAX_GUTTER_INK_FRAC = 0.03;
 // a word-count floor is needed too; genuine columns measure >=76 words.
 export const MIN_COL_WORDS = 10;
 
+// lineYTol is an absolute page fraction measured on body text, but a word's
+// box grows downward with its descenders, so its midpoint sits lower than a
+// descenderless neighbour's on the same printed line. At body size that offset
+// is ~0.003 (inside the tolerance); on 56pt display type it is ~0.007 (outside
+// it), which splits one heading into two rows that then emit in midY order
+// ("Open Road" -> "Road Open"). A descender is ~21% of the em, so the offset is
+// ~11% of the taller box; 0.2 clears it with margin and still sits far below any
+// line pitch. Body rows are unaffected: 0.2 * a body height stays under the floor.
+export const LINE_Y_TOL_HEIGHT_FRAC = 0.2;
+
 // Measured: a thin data rail is 11% of body words; the thinnest genuine
 // column is 31% — 0.2 sits between.
 export const MIN_COL_SHARE = 0.2;
@@ -153,7 +163,9 @@ interface Row {
 
 // Groups same-visual-line words via lineYTol/lineHeightRatio, requiring band
 // agreement; searches ALL open rows since per-word y drifts ~0.001 across a
-// printed line, enough to interleave two lines' words in y-sorted order.
+// printed line, enough to interleave two lines' words in y-sorted order. The y
+// tolerance scales with box height (LINE_Y_TOL_HEIGHT_FRAC) so display type,
+// whose descenders shift a word's midpoint further, still groups as one row.
 function buildRows(words: Word[], tuning: Tuning, bandOf: (w: Word) => number): Row[] {
   const rows: Row[] = [];
   // Sort order only affects which compatible row a tie lands in (every row
@@ -161,7 +173,11 @@ function buildRows(words: Word[], tuning: Tuning, bandOf: (w: Word) => number): 
   const sorted = [...words].sort((a, b) => midY(b) - midY(a) || a.x - b.x);
   for (const w of sorted) {
     const band = bandOf(w);
-    const target = rows.find((r) => r.band === band && Math.abs(midY(r.rect) - midY(w)) <= tuning.lineYTol && Math.max(r.rect.h, w.h) < Math.min(r.rect.h, w.h) * tuning.lineHeightRatio);
+    const target = rows.find((r) => {
+      if (r.band !== band) return false;
+      const yTol = Math.max(tuning.lineYTol, Math.max(r.rect.h, w.h) * LINE_Y_TOL_HEIGHT_FRAC);
+      return Math.abs(midY(r.rect) - midY(w)) <= yTol && Math.max(r.rect.h, w.h) < Math.min(r.rect.h, w.h) * tuning.lineHeightRatio;
+    });
     if (target) {
       target.words.push(w);
       target.rect = union(target.rect, w);
