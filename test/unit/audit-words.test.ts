@@ -5,10 +5,10 @@
 // (0 missing), and actually detects an artificially deleted word rather than silently reporting 0.
 
 import assert from 'node:assert/strict';
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
-import os from 'node:os';
+import { rmSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { audit } from '../lib/audit-words.ts';
+import { scratchDir } from '../lib/tmp.ts';
 
 const WORDS = [
   { page: 1, text: 'Hello' },
@@ -22,7 +22,7 @@ const WORDS = [
 const MD = ['### p1', 'Hello World', '', '### p2', 'Foo bar-baz', ''].join('\n');
 
 function withFixtures(words: string, md: string, fn: (wordsPath: string, mdPath: string) => void): void {
-  const dir = mkdtempSync(path.join(os.tmpdir(), 'audit-words-test-'));
+  const dir = scratchDir('audit-words-test-');
   try {
     const wordsPath = path.join(dir, 'words.jsonl');
     const mdPath = path.join(dir, 'doc.md');

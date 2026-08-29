@@ -1,12 +1,12 @@
 // page-marker.test.ts — the shared "### pN" split. A duplicate marker must
 // never silently drop a body slice (report: one row per occurrence; audit: slices concatenated).
 import assert from 'node:assert/strict';
-import { mkdtempSync, writeFileSync } from 'node:fs';
-import os from 'node:os';
+import { writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { auditWords } from '../../src/audit.ts';
 import { bodyByPage, splitByPageMarker } from '../../src/page-marker.ts';
 import { buildOcrReport } from '../../src/report.ts';
+import { scratchDir } from '../lib/tmp.ts';
 
 const DUP_MD = '### p1\nfoo alpha here.\n\n### p2\nbar bravo line.\n\n### p1\nbaz charlie tail.\n';
 
@@ -38,7 +38,7 @@ describe('page markers with a duplicate "### pN"', () => {
   });
 
   it('auditWords finds a word that sits in the FIRST duplicate slice', () => {
-    const dir = mkdtempSync(path.join(os.tmpdir(), 'page-marker-'));
+    const dir = scratchDir('page-marker-');
     const wordsPath = path.join(dir, 'words.jsonl');
     const mdPath = path.join(dir, 'out.md');
     writeFileSync(wordsPath, `${['alpha', 'charlie'].map((t) => JSON.stringify({ page: 1, text: t, x: 0, y: 0, w: 0.1, h: 0.01 })).join('\n')}\n`);

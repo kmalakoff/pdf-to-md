@@ -5,13 +5,13 @@
 // or bump src/report.ts's OUTPUT_VERSION and refreeze the expectation.
 
 import assert from 'node:assert/strict';
-import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
-import os from 'node:os';
+import { readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import cr from 'cr';
 import { auditWords } from '../../src/index.ts';
 import { run } from '../lib/run.ts';
+import { scratchDir } from '../lib/tmp.ts';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const FIXTURES = path.join(here, '..', 'fixtures', 'real-replay');
@@ -29,7 +29,7 @@ describe('real replay gate: 100-page real-OCR word dump -> markdown within diff 
   });
 
   it('severity-1: MISSING=0 via the shipped auditor', () => {
-    const tmp = path.join(mkdtempSync(path.join(os.tmpdir(), 'real-replay-')), 'replayed.md');
+    const tmp = path.join(scratchDir('real-replay-'), 'replayed.md');
     writeFileSync(tmp, md);
     const result = auditWords(WORDS, tmp);
     assert.equal(result.missing, 0, `expected MISSING=0, got: ${result.summaryLine}`);

@@ -1,17 +1,17 @@
 // public-corpus.test.ts — automated regression coverage (text + OCR paths) against real,
 // checksum-pinned public documents (test/lib/corpus.ts), independent of any private/local file.
 
-// Fetched once and cached under os.tmpdir(); a test skips cleanly via `this.skip()` when the
-// upstream URL is unreachable, rather than failing the suite for a flaky/gone mirror.
+// Fetched once and cached under the package's .tmp/ (test/lib/corpus.ts); a test skips cleanly
+// via `this.skip()` when the upstream URL is unreachable, rather than failing the suite for a flaky/gone mirror.
 
 import assert from 'node:assert/strict';
-import { existsSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
-import os from 'node:os';
+import { existsSync, rmSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { auditWords } from '../../src/audit.ts';
 import { CACHE_DIR, CORPUS, corpusPath } from '../lib/corpus.ts';
 import { debugWordsPath, readDebugWords } from '../lib/debug-words.ts';
 import { expectReport, run } from '../lib/run.ts';
+import { scratchDir } from '../lib/tmp.ts';
 
 // Same normalization as no-silent-loss.test.ts's severity-1 check — see there for the rule.
 function normalize(s: string): string {
@@ -99,7 +99,7 @@ describe('public corpus (Phase T): real documents, fetched + checksum-verified o
 
     // Severity-1 invariant, same as c02-22.pdf's check above, via the SHIPPED auditor
     // (src/audit.ts) rather than a hand-rolled scan — the review marker flags garbage, never loses it.
-    const mdPath = path.join(mkdtempSync(path.join(os.tmpdir(), 'pdf-to-md-usgs-corpus-')), 'usgs-fs20183035.md');
+    const mdPath = path.join(scratchDir('usgs-corpus-'), 'usgs-fs20183035.md');
     writeFileSync(mdPath, md);
     const audit = auditWords(dump, mdPath);
     assert.equal(audit.missing, 0, `words recognized by the engine but missing from usgs-fs20183035.pdf's markdown output: ${audit.summaryLine}`);

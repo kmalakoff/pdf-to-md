@@ -5,7 +5,6 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { isBelowNodeFloor } from '../../src/cli.ts';
 import { fixturePath } from '../lib/fixtures.ts';
 import { run } from '../lib/run.ts';
 
@@ -60,32 +59,5 @@ describe('cli: render fail-fast pre-open range check', () => {
     assert.equal(status, 2);
     assert.match(stderr, /usage:/i);
     assert.match(stderr, /invalid page spec/i);
-  });
-});
-
-describe('isBelowNodeFloor', () => {
-  it('below the floor', () => {
-    assert.equal(isBelowNodeFloor('22.12.9', '22.13.0'), true);
-  });
-
-  it('exactly at the floor', () => {
-    assert.equal(isBelowNodeFloor('22.13.0', '22.13.0'), false);
-  });
-
-  it('above the floor', () => {
-    assert.equal(isBelowNodeFloor('22.13.1', '22.13.0'), false);
-    assert.equal(isBelowNodeFloor('23.0.0', '22.13.0'), false);
-  });
-
-  it('a ">=" prefixed floor is stripped before comparing', () => {
-    assert.equal(isBelowNodeFloor('22.12.0', '>=22.13.0'), true);
-  });
-
-  it('garbage input is null (no warning), not "not below"', () => {
-    assert.equal(isBelowNodeFloor('not-a-version', '22.13.0'), null);
-  });
-
-  it('a prerelease suffix is null (no warning), not "not below"', () => {
-    assert.equal(isBelowNodeFloor('22.13.0-rc1', '22.13.0'), null);
   });
 });

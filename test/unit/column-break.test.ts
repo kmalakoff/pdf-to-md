@@ -2,12 +2,12 @@
 // Cross-column join rule lives in src/emit.ts; display-junk gutter-fragment routing in src/geometry.ts.
 
 import assert from 'node:assert/strict';
-import { mkdtempSync, writeFileSync } from 'node:fs';
-import os from 'node:os';
+import { writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { MAX_GUTTER_INK_FRAC, MIN_COL_SHARE, MIN_COL_WORDS } from '../../src/geometry.ts';
 import { fixturePath } from '../lib/fixtures.ts';
 import { expectReport, run } from '../lib/run.ts';
+import { scratchDir } from '../lib/tmp.ts';
 
 describe('OCR path: ocr-colbreak.pdf', () => {
   const result = run([fixturePath('ocr-colbreak.pdf'), '--stdout', '--ocr', '--json']);
@@ -83,7 +83,7 @@ function dumpLine(page: number, y: number, xStart: number, text: string, h = 0.0
 }
 
 function runWordsJson(words: DumpWord[]): ReturnType<typeof run> {
-  const dir = mkdtempSync(path.join(os.tmpdir(), 'colbreak-words-'));
+  const dir = scratchDir('colbreak-words-');
   const file = path.join(dir, 'words.jsonl');
   writeFileSync(file, words.map((w) => JSON.stringify(w)).join('\n'));
   return run([`--words-json=${file}`, '--stdout', '--ocr', '--json']);

@@ -20,32 +20,6 @@ function packageVersion(): string {
   }
 }
 
-// Exported so the comparison is unit-testable without spawning a subprocess
-// with a faked Node version. null means unparseable input, not "not below".
-export function isBelowNodeFloor(version: string, floor: string): boolean | null {
-  const parts = (v: string) => v.replace(/^v/, '').replace(/^>=/, '').split('.').map(Number);
-  const v = parts(version);
-  const f = parts(floor);
-  if (v.length !== 3 || f.length !== 3 || v.some(Number.isNaN) || f.some(Number.isNaN)) return null;
-  const [rMaj, rMin, rPat] = v;
-  const [fMaj, fMin, fPat] = f;
-  return rMaj !== fMaj ? rMaj < fMaj : rMin !== fMin ? rMin < fMin : rPat < fPat;
-}
-
-// Reads engines.node from package.json (kept as the single source of truth,
-// not hardcoded here) and returns it iff process.version is below it.
-function belowNodeFloor(version = process.version): string | null {
-  try {
-    const pkgPath = path.resolve(__dirname, '..', '..', 'package.json');
-    const pkg = JSON.parse(readFileSync(pkgPath, 'utf8')) as { engines?: { node?: string } };
-    const floor = pkg.engines?.node;
-    if (!floor) return null;
-    return isBelowNodeFloor(version, floor) ? floor.replace(/^>=/, '') : null;
-  } catch {
-    return null;
-  }
-}
-
 function usage(name: string): string {
   return (
     `usage: ${name} <file.pdf> [out.md] [flags...]        convert a PDF to markdown\n` +
@@ -84,9 +58,6 @@ function usage(name: string): string {
 
 // Thrown errors -> exit 1 with the message verbatim; usage errors exit 2.
 export default async function cli(argv: string[], name: string): Promise<void> {
-  const floor = belowNodeFloor();
-  if (floor) console.error(`${name}: Node ${process.version} is below the required >=${floor} — the OCR path can silently find no words instead of erroring; upgrade Node.`);
-
   if (argv[0] === '--version' || argv[0] === '-v') {
     console.log(packageVersion());
     return;

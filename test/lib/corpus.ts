@@ -2,12 +2,12 @@
 // once per key, staged in `<dest>.building`, and renamed atomically on success; every download is sha256-verified against a pinned hash before the rename.
 import { createHash } from 'node:crypto';
 import { existsSync, mkdirSync, renameSync, rmSync, writeFileSync } from 'node:fs';
-import os from 'node:os';
 import path from 'node:path';
+import { TMP_ROOT } from './tmp.ts';
 
-// tmpdir, not a repo-relative path: this file may be read but never
-// gitignored-and-forgotten, and no other file may add an ignore rule for it.
-export const CACHE_DIR = path.join(os.tmpdir(), 'pdf-to-md-corpus');
+// Stable key, not a per-run unique dir: entries are fetched once and deliberately
+// reused across runs, so the cache must survive between test invocations.
+export const CACHE_DIR = path.join(TMP_ROOT, 'corpus');
 
 export interface CorpusEntry {
   /** Cache filename, also the lookup key passed to corpusPath(). */

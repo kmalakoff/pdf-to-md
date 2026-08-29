@@ -5,14 +5,14 @@
 // full engine path) and geometry-level (--words-json, engine-independent, same pattern as column-break.test.ts's geometry-only cases).
 
 import assert from 'node:assert/strict';
-import { mkdtempSync, writeFileSync } from 'node:fs';
-import os from 'node:os';
+import { writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { UNSTRUCTURED_WORDLIKE_FRACTION } from '../../src/emit.ts';
 import { LOW_CONFIDENCE_THRESHOLD } from '../../src/report.ts';
 import { debugWordsPath, readDebugWords } from '../lib/debug-words.ts';
 import { fixturePath } from '../lib/fixtures.ts';
 import { expectReport, run } from '../lib/run.ts';
+import { scratchDir } from '../lib/tmp.ts';
 
 function normalize(s: string): string {
   return s.toLowerCase().replace(/[^a-z0-9\s]/g, '');
@@ -102,7 +102,7 @@ function dumpLine(page: number, y: number, xStart: number, text: string, h = 0.0
 }
 
 function runWordsJson(words: DumpWord[]): ReturnType<typeof run> {
-  const dir = mkdtempSync(path.join(os.tmpdir(), 'review-blocks-words-'));
+  const dir = scratchDir('review-blocks-words-');
   const file = path.join(dir, 'words.jsonl');
   writeFileSync(file, words.map((w) => JSON.stringify(w)).join('\n'));
   return run([`--words-json=${file}`, '--stdout', '--ocr', '--json']);

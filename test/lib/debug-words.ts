@@ -1,8 +1,8 @@
 // debug-words.ts — test helper for src/cli/extract.ts's --debug-words=FILE
 // dump (one JSON line per word: {page,text,x,y,w,h,confidence?}); a bad line fails the calling test loudly rather than being swallowed.
-import { mkdtempSync, readFileSync } from 'node:fs';
-import os from 'node:os';
+import { readFileSync } from 'node:fs';
 import path from 'node:path';
+import { scratchDir } from './tmp.ts';
 
 export interface DebugWord {
   page: number;
@@ -16,7 +16,7 @@ export interface DebugWord {
 
 /** A fresh temp file path for a --debug-words=FILE run (caller passes it as the flag's value). */
 export function debugWordsPath(): string {
-  const dir = mkdtempSync(path.join(os.tmpdir(), 'pdf-to-md-debug-words-'));
+  const dir = scratchDir('debug-words-');
   return path.join(dir, 'words.jsonl');
 }
 

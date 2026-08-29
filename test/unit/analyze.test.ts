@@ -2,13 +2,13 @@
 // Direct-import coverage (src/index.ts only, never bin/ — see api.test.ts's header) plus one CLI round-trip for the raw word-replay contract.
 
 import assert from 'node:assert/strict';
-import { mkdtempSync, writeFileSync } from 'node:fs';
-import os from 'node:os';
+import { writeFileSync } from 'node:fs';
 import path from 'node:path';
 import type { Analysis, OcrWordInput } from '../../src/index.ts';
 import { analyze, auditWords, extractOcr, PdfToMdError, toMarkdown, toText } from '../../src/index.ts';
 import { fixturePath } from '../lib/fixtures.ts';
 import { run } from '../lib/run.ts';
+import { scratchDir } from '../lib/tmp.ts';
 
 function normalize(s: string): string {
   return s
@@ -239,7 +239,7 @@ describe('severity-1 audit (shipped auditor) against a raw Analysis word list', 
     const analysis = await analyze(fixturePath('ocr-chart.pdf'), { path: 'ocr' });
     const md = toMarkdown(analysis);
 
-    const dir = mkdtempSync(path.join(os.tmpdir(), 'analyze-audit-'));
+    const dir = scratchDir('analyze-audit-');
     const wordsPath = path.join(dir, 'words.jsonl');
     const mdPath = path.join(dir, 'doc.md');
     const lines: string[] = [];
@@ -256,7 +256,7 @@ describe('severity-1 audit (shipped auditor) against a raw Analysis word list', 
 
 describe('audit subcommand: pdf-to-md audit <words.jsonl> <file.md>', () => {
   it('exits 0 and reports MISSING=0 on a clean pair', () => {
-    const dump = path.join(mkdtempSync(path.join(os.tmpdir(), 'audit-cli-')), 'words.jsonl');
+    const dump = path.join(scratchDir('audit-cli-'), 'words.jsonl');
     const { md, status: extractStatus } = run([fixturePath('ocr-single.pdf'), '--stdout', '--ocr', `--debug-words=${dump}`]);
     assert.equal(extractStatus, 0);
     const mdPath = `${dump}.md`;
@@ -268,7 +268,7 @@ describe('audit subcommand: pdf-to-md audit <words.jsonl> <file.md>', () => {
   });
 
   it('exits 1 and reports the missing word when the markdown is missing a recognized word', () => {
-    const dump = path.join(mkdtempSync(path.join(os.tmpdir(), 'audit-cli-missing-')), 'words.jsonl');
+    const dump = path.join(scratchDir('audit-cli-missing-'), 'words.jsonl');
     const { md, status: extractStatus } = run([fixturePath('ocr-single.pdf'), '--stdout', '--ocr', `--debug-words=${dump}`]);
     assert.equal(extractStatus, 0);
     const mdPath = `${dump}.md`;

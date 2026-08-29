@@ -2,9 +2,9 @@
 // fixture is committed). mocha runs one serial process, but concurrent test invocations can race on a cold cache, so generation is guarded by an atomic mkdir lock; the loser polls for the "done" marker.
 import { execFileSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
-import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { TMP_ROOT } from './tmp.ts';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const generatorPath = path.join(here, 'make-fixtures.ts');
@@ -25,7 +25,7 @@ let cachedDir: string | null = null;
 export function fixturesDir(): string {
   if (cachedDir) return cachedDir;
 
-  const dir = path.join(os.tmpdir(), `pdf-to-md-fixtures-${sourceTag()}`);
+  const dir = path.join(TMP_ROOT, `fixtures-${sourceTag()}`);
   const marker = path.join(dir, '.done');
   const lock = `${dir}.lock`;
 
@@ -33,6 +33,10 @@ export function fixturesDir(): string {
     cachedDir = dir;
     return dir;
   }
+
+  // TMP_ROOT itself may not exist yet (unlike os.tmpdir(), which always does) — the lock's
+  // parent directory must be there before the mkdir-as-lock attempt below.
+  mkdirSync(TMP_ROOT, { recursive: true });
 
   let haveLock = false;
   try {

@@ -9,14 +9,14 @@
 
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { mkdtempSync, readdirSync, readFileSync } from 'node:fs';
-import os from 'node:os';
+import { readdirSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createCanvas, loadImage } from '@napi-rs/canvas';
 import { PdfToMdError } from '../../src/errors.ts';
 import { renderPageToPNG } from '../../src/raster.ts';
 import { fixturePath } from '../lib/fixtures.ts';
+import { scratchDir } from '../lib/tmp.ts';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const cliPath = path.join(here, '..', '..', 'bin', 'cli.js');
@@ -45,7 +45,7 @@ async function nonwhiteFraction(png: Buffer): Promise<number> {
 
 /** Run the CLI against one page of a fixture and return the written PNG's bytes. */
 function renderFixturePage(fixtureName: string, page: number, dpi = 200): Buffer {
-  const outDir = mkdtempSync(path.join(os.tmpdir(), 'pdf-render-test-'));
+  const outDir = scratchDir('pdf-render-test-');
   const fixture = fixturePath(fixtureName);
   const result = spawnSync(process.execPath, [cliPath, 'render', fixture, String(page), '--dpi', String(dpi), '--out', outDir], { encoding: 'utf8' });
   assert.equal(result.status, 0, `render failed: ${result.stderr}`);
@@ -113,7 +113,7 @@ describe('render subcommand CLI: invalid args', () => {
   });
 
   it('a partly-valid range fails atomically: no PNG written before the range error', () => {
-    const outDir = mkdtempSync(path.join(os.tmpdir(), 'render-range-'));
+    const outDir = scratchDir('render-range-');
     const result = spawnSync(process.execPath, [cliPath, 'render', fixturePath('text-single.pdf'), '1-5', '--out', outDir], { encoding: 'utf8' });
     assert.equal(result.status, 1);
     assert.match(result.stderr, /outside this document/);

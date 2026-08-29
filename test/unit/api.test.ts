@@ -2,12 +2,12 @@
 // (never bin/), proving the library path carries no CLI dependency (no argv, no process.exit, no console output). Subprocess tests elsewhere (test/lib/run.ts) cover the CLI contract.
 
 import assert from 'node:assert/strict';
-import { rmSync, writeFileSync } from 'node:fs';
-import os from 'node:os';
+import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import type { OcrProgressEvent, OcrWordInput } from '../../src/index.ts';
 import { analyze, extractOcr, extractText, PdfToMdError, pdfToMarkdown } from '../../src/index.ts';
 import { fixturePath } from '../lib/fixtures.ts';
+import { TMP_ROOT } from '../lib/tmp.ts';
 
 interface DumpWord {
   page: number;
@@ -128,7 +128,8 @@ describe('pdfToMarkdown: error contract', () => {
   });
 
   it('non-PDF file: PdfToMdError/PDF_OPEN, not a raw/uncoded InvalidPDFException', async () => {
-    const notAPdf = path.join(os.tmpdir(), 'pdf-to-md-not-a-pdf.pdf');
+    mkdirSync(TMP_ROOT, { recursive: true });
+    const notAPdf = path.join(TMP_ROOT, 'not-a-pdf.pdf');
     writeFileSync(notAPdf, 'this is not a pdf');
     try {
       await assert.rejects(
@@ -147,7 +148,8 @@ describe('pdfToMarkdown: error contract', () => {
   });
 
   it('never writes to stdout/stderr, even on a broken/non-PDF input (pdfjs verbosity silenced)', async () => {
-    const notAPdf = path.join(os.tmpdir(), 'pdf-to-md-not-a-pdf-2.pdf');
+    mkdirSync(TMP_ROOT, { recursive: true });
+    const notAPdf = path.join(TMP_ROOT, 'not-a-pdf-2.pdf');
     writeFileSync(notAPdf, 'also not a pdf');
     const origErr = process.stderr.write.bind(process.stderr);
     const origOut = process.stdout.write.bind(process.stdout);
