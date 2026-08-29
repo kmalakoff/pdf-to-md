@@ -1,5 +1,6 @@
 // audit command — the severity-1 audit instrument (README's "Design
 // contract") as a first-class subcommand. Thin wrapper over src/audit.ts's auditWords (the library returns data, only the CLI prints and exits).
+import { auditWords } from '../audit.ts';
 import type { Command } from './types.ts';
 
 const USAGE = 'usage: pdf-to-md audit <words.jsonl> <file.md>';
@@ -12,9 +13,6 @@ const audit: Command = async (ctx) => {
   const [wordsPath, mdPath] = ctx.rest;
   if (!wordsPath || !mdPath) ctx.usageError(USAGE);
 
-  // Imported here, not at module top, same lazy-load rule as every other
-  // command — `pdf-to-md audit` should never pay for what the other commands need.
-  const { auditWords } = await import('../audit.ts');
   const result = auditWords(wordsPath, mdPath);
   for (const line of result.lines) console.log(line);
 

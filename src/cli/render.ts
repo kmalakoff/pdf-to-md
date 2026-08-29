@@ -4,6 +4,8 @@ import { mkdirSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { parseArgs } from 'node:util';
 import { PdfToMdError } from '../errors.ts';
+import { awaitPdfOpen, openPdfForRender } from '../pdf-open.ts';
+import { renderLoadedPage } from '../raster.ts';
 import type { Command } from './types.ts';
 
 const USAGE = 'usage: pdf-to-md render <file.pdf> <page>[-<page>] [--dpi|-d N (default 288)] [--out|-o DIR (default .)]';
@@ -48,9 +50,6 @@ const render: Command = async (ctx) => {
   mkdirSync(outDir, { recursive: true });
   const stem = path.basename(pdfPath, path.extname(pdfPath)).replaceAll(' ', '-');
 
-  // Imported here, not at module top: keeps pdfjs/canvas out of every other command's startup.
-  const { awaitPdfOpen, openPdfForRender } = await import('../pdf-open.ts');
-  const { renderLoadedPage } = await import('../raster.ts');
   const loadingTask = openPdfForRender(pdfPath);
   try {
     const doc = await awaitPdfOpen(loadingTask, pdfPath);

@@ -4,6 +4,7 @@ import { collect, pageCount } from './collect.ts';
 import { dictAvailable, dictUnavailableWarning } from './dict.ts';
 import type { EmitBlock } from './emit.ts';
 import { emitPage, renderEmitBlock } from './emit.ts';
+import { recognizePdf } from './engines/tesseract.ts';
 // Type-only: erased at compile time, so this does NOT create a runtime
 // circular dependency even though src/extract.ts imports (value-level) from this module.
 import type { ExtractOcrOptions, ExtractTextOptions, OcrWordInput } from './extract.ts';
@@ -57,7 +58,6 @@ export async function buildOcrAnalysisPages(input: { pdfPath: string } | { words
     first = opts.pages?.first ?? 1;
     last = opts.pages?.last ?? opts.pages?.first ?? Math.max(1, ...words.map((w) => w.page));
   } else {
-    const { recognizePdf } = await import('./engines/tesseract.ts');
     const totalPages = await pageCount(validated.pdfPath);
     const rawFirst = opts.pages?.first ?? 1;
     const rawLast = opts.pages?.last ?? (opts.pages ? rawFirst : totalPages);

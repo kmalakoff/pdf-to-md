@@ -3,8 +3,11 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { parseArgs } from 'node:util';
+import { analyze } from '../analyze.ts';
 import type { OcrWordInput } from '../extract.ts';
+import { extractOcr, needsOcrFallback, ocrFallbackNotice, pdfToMarkdown } from '../extract.ts';
 import type { Tuning } from '../geometry.ts';
+import { toText } from '../render-analysis.ts';
 import type { Analysis, Report } from '../types.ts';
 import type { Command } from './types.ts';
 
@@ -179,9 +182,6 @@ const extract: Command = async (ctx) => {
   let content: string;
   let report: Report;
   if (format === 'md') {
-    // Unchanged path: extractOcr/pdfToMarkdown directly, exactly as before
-    // --format existed.
-    const { extractOcr, pdfToMarkdown } = await import('../extract.ts');
     let markdown: string;
     if (words !== undefined) {
       ({ markdown, report } = await extractOcr({ words }, ocrCommon));
@@ -197,9 +197,6 @@ const extract: Command = async (ctx) => {
   } else {
     // raw/txt: both render from an Analysis — raw IS the Analysis as JSON;
     // txt is toText(analysis). Mirrors pdfToMarkdown's own auto-OCR fallback decision so a different --format doesn't silently pick a different path.
-    const { analyze } = await import('../analyze.ts');
-    const { toText } = await import('../render-analysis.ts');
-    const { needsOcrFallback, ocrFallbackNotice } = await import('../extract.ts');
     let analysis: Analysis;
     if (words !== undefined) {
       analysis = await analyze({ words }, { ...ocrCommon, path: 'ocr' });
