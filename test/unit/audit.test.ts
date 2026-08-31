@@ -7,8 +7,8 @@
 import assert from 'node:assert/strict';
 import { writeFileSync } from 'node:fs';
 import path from 'node:path';
-import { safeRmSync } from 'fs-remove-compat';
 import { auditWords } from '@effortlessmotion/pdf-to-md';
+import { safeRmSync } from 'fs-remove-compat';
 import { scratchDir } from '../lib/tmp.ts';
 
 const WORDS = [

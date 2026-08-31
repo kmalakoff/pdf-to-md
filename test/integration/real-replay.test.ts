@@ -8,8 +8,8 @@ import assert from 'node:assert/strict';
 import { readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import cr from 'cr';
 import { auditWords } from '@effortlessmotion/pdf-to-md';
+import cr from 'cr';
 import { run } from '../lib/run.ts';
 import { scratchDir } from '../lib/tmp.ts';
 

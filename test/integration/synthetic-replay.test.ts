@@ -11,8 +11,8 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import cr from 'cr';
 import { auditWords, OUTPUT_VERSION } from '@effortlessmotion/pdf-to-md';
+import cr from 'cr';
 import { expectReport, run } from '../lib/run.ts';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
