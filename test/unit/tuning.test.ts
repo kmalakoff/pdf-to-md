@@ -2,7 +2,7 @@
 // --flag=value; see DEFAULT_TUNING's comment for what each knob controls. Checks only: defaults unchanged with no flags, a flag demonstrably changes behavior, a bad value is a usage error.
 
 import assert from 'node:assert/strict';
-import { DEFAULT_TUNING } from '../../src/geometry.ts';
+import { DEFAULT_TUNING } from '@effortlessmotion/pdf-to-md';
 import { fixturePath } from '../lib/fixtures.ts';
 import { expectReport, run } from '../lib/run.ts';
 

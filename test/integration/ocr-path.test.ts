@@ -2,7 +2,6 @@
 // test/lib/make-fixtures.ts), so assertions allow for case differences rather than byte-exact text.
 
 import assert from 'node:assert/strict';
-import { HAS_DICT } from '../lib/dict.ts';
 import { fixturePath } from '../lib/fixtures.ts';
 import { expectReport, run } from '../lib/run.ts';
 
@@ -17,14 +16,13 @@ describe('OCR path: ocr-single.pdf', () => {
 
   it('recognizes every expected word', () => {
     // 'creative' is excluded here — it's a line-final OCR hyphen split ("creat-" / "ive")
-    // whose rejoin depends on a dictionary; see the dictionary-guarded tests below.
+    // whose rejoin depends on the bundled dictionary.
     for (const w of ['Mountain', 'Journal', 'valley', 'clouds', 'hiker', 'climb', 'birds', 'camp', 'gear']) {
       assert.ok(hasWord(md, w), `expected word "${w}" not found in OCR output`);
     }
   });
 
-  it('recognizes the dictionary-dependent word ("creative")', function (this: Mocha.Context) {
-    if (!HAS_DICT) this.skip(); // dead unless PDF_TO_MD_DICT_PATH overrides — the bundled dictionary is always present
+  it('recognizes the dictionary-dependent word ("creative")', () => {
     assert.ok(hasWord(md, 'creative'), 'expected word "creative" not found in OCR output');
   });
 
@@ -37,13 +35,11 @@ describe('OCR path: ocr-single.pdf', () => {
     assert.match(md, /birds circled slowly above the camp as hikers packed their gear\.?/i);
   });
 
-  it('joins the hyphen-split paragraph onto a single line', function (this: Mocha.Context) {
-    if (!HAS_DICT) this.skip(); // dead unless PDF_TO_MD_DICT_PATH overrides — the bundled dictionary is always present
+  it('joins the hyphen-split paragraph onto a single line', () => {
     assert.match(md, /hiker needs a spark of creative energy before the steep climb\.?/i);
   });
 
-  it('closes the OCR line-final hyphen ("creat-" + "ive" -> "creative")', function (this: Mocha.Context) {
-    if (!HAS_DICT) this.skip(); // dead unless PDF_TO_MD_DICT_PATH overrides — the bundled dictionary is always present
+  it('closes the OCR line-final hyphen ("creat-" + "ive" -> "creative")', () => {
     assert.doesNotMatch(md, /creat-\s*ive/i);
     assert.match(md, /creative/i);
   });
@@ -91,8 +87,7 @@ describe('OCR path: ocr-badge.pdf', () => {
     assert.match(md, /^#+\s*Trail Guide\s*$/im);
   });
 
-  it('recognizes the dictionary-dependent word ("creative")', function (this: Mocha.Context) {
-    if (!HAS_DICT) this.skip(); // dead unless PDF_TO_MD_DICT_PATH overrides — the bundled dictionary is always present
+  it('recognizes the dictionary-dependent word ("creative")', () => {
     assert.ok(hasWord(md, 'creative'), 'expected word "creative" not found in OCR output');
   });
 
@@ -111,8 +106,7 @@ describe('OCR path: ocr-badge.pdf', () => {
     assert.match(md, /Sunlight filtered through the pines as the trail wound toward the summit\.?/i);
   });
 
-  it('keeps the hyphen-split paragraph intact around the excluded badge', function (this: Mocha.Context) {
-    if (!HAS_DICT) this.skip(); // dead unless PDF_TO_MD_DICT_PATH overrides — the bundled dictionary is always present
+  it('keeps the hyphen-split paragraph intact around the excluded badge', () => {
     assert.match(md, /Every group needs a spark of creative spirit for the final climb\.?/i);
   });
 

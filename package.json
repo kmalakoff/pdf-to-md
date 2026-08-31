@@ -54,6 +54,7 @@
     "@types/mocha": "^10.0.10",
     "@types/node": "^26.2.0",
     "cr": "^0.1.0",
+    "fs-remove-compat": "^1.0.4",
     "node-version-use": "^2.5.0",
     "pdf-lib": "^1.17.1",
     "ts-dev-stack": "^1.22.3",

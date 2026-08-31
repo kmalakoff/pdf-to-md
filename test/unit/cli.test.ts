@@ -36,9 +36,9 @@ describe('cli: --help / -h', () => {
 });
 
 describe('cli: no args', () => {
-  it('exits 2, usage on stderr, no version banner', () => {
+  it('exits 19, usage on stderr, no version banner', () => {
     const { status, stdout, stderr } = run([]);
-    assert.equal(status, 2);
+    assert.equal(status, 19);
     assert.match(stderr, /usage: pdf-to-md/);
     assert.doesNotMatch(stderr, /^pdf-to-md v/);
     assert.equal(stdout, '');
@@ -46,9 +46,9 @@ describe('cli: no args', () => {
 });
 
 describe('cli: unknown flag', () => {
-  it('extract --nope exits 2 with usage', () => {
+  it('extract --nope exits 19 with usage', () => {
     const { status, stderr } = run([fixturePath('text-single.pdf'), '--nope']);
-    assert.equal(status, 2);
+    assert.equal(status, 19);
     assert.match(stderr, /usage:/i);
   });
 });
@@ -56,7 +56,7 @@ describe('cli: unknown flag', () => {
 describe('cli: render fail-fast pre-open range check', () => {
   it('a reversed range (5-2) is a usage error, not a runtime one', () => {
     const { status, stderr } = run(['render', fixturePath('text-single.pdf'), '5-2']);
-    assert.equal(status, 2);
+    assert.equal(status, 19);
     assert.match(stderr, /usage:/i);
     assert.match(stderr, /invalid page spec/i);
   });

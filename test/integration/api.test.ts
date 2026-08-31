@@ -4,8 +4,8 @@
 import assert from 'node:assert/strict';
 import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
-import type { OcrProgressEvent, OcrWordInput } from '../../src/index.ts';
-import { analyze, extractOcr, extractText, PdfToMdError, pdfToMarkdown } from '../../src/index.ts';
+import type { OcrProgressEvent, OcrWordInput } from '@effortlessmotion/pdf-to-md';
+import { analyze, extractOcr, extractText, PdfToMdError, pdfToMarkdown } from '@effortlessmotion/pdf-to-md';
 import { fixturePath } from '../lib/fixtures.ts';
 import { TMP_ROOT } from '../lib/tmp.ts';
 

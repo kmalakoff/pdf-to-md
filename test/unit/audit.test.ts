@@ -1,13 +1,14 @@
-// audit-words.test.ts — fast, inline-fixture coverage for test/lib/audit-words.ts; the real
-// acceptance check runs against the real-OCR baseline in real-replay.test.ts.
+// audit.test.ts — src/audit.ts: fast, inline-fixture coverage of the shipped auditor (auditWords);
+// the real acceptance check runs against the real-OCR baseline in real-replay.test.ts.
 
 // Worth a fast unit test: the auditor's own logic reads a tiny jsonl+markdown pair correctly
 // (0 missing), and actually detects an artificially deleted word rather than silently reporting 0.
 
 import assert from 'node:assert/strict';
-import { rmSync, writeFileSync } from 'node:fs';
+import { writeFileSync } from 'node:fs';
 import path from 'node:path';
-import { audit } from '../lib/audit-words.ts';
+import { safeRmSync } from 'fs-remove-compat';
+import { auditWords } from '@effortlessmotion/pdf-to-md';
 import { scratchDir } from '../lib/tmp.ts';
 
 const WORDS = [
@@ -30,14 +31,14 @@ function withFixtures(words: string, md: string, fn: (wordsPath: string, mdPath:
     writeFileSync(mdPath, md);
     fn(wordsPath, mdPath);
   } finally {
-    rmSync(dir, { recursive: true, force: true });
+    safeRmSync(dir, { recursive: true, force: true });
   }
 }
 
-describe('audit-words', () => {
+describe('auditWords (src/audit.ts)', () => {
   it('reports 0 missing when every recognized word is present', () => {
     withFixtures(WORDS, MD, (wordsPath, mdPath) => {
-      const result = audit(wordsPath, mdPath);
+      const result = auditWords(wordsPath, mdPath);
       assert.equal(result.parsed, 4);
       assert.equal(result.nonJsonSkipped, 0);
       assert.equal(result.pages, 2);
@@ -49,7 +50,7 @@ describe('audit-words', () => {
   it('fires on exactly the deleted word', () => {
     const injected = MD.replace('Hello World', 'World'); // drop "Hello" from p1
     withFixtures(WORDS, injected, (wordsPath, mdPath) => {
-      const result = audit(wordsPath, mdPath);
+      const result = auditWords(wordsPath, mdPath);
       assert.equal(result.missing, 1);
       assert.equal(result.perPage.length, 1);
       assert.equal(result.perPage[0].page, 1);

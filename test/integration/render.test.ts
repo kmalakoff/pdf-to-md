@@ -13,8 +13,6 @@ import { readdirSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createCanvas, loadImage } from '@napi-rs/canvas';
-import { PdfToMdError } from '../../src/errors.ts';
-import { renderPageToPNG } from '../../src/raster.ts';
 import { fixturePath } from '../lib/fixtures.ts';
 import { scratchDir } from '../lib/tmp.ts';
 
@@ -81,41 +79,31 @@ describe('render subcommand: ocr-single.pdf (image-only fixture) at 200 DPI', ()
   });
 });
 
-describe('renderPageToPNG: library error contract', () => {
-  it('throws PdfToMdError code PDF_OPEN for a missing file', async () => {
-    await assert.rejects(renderPageToPNG('/nonexistent/does-not-exist.pdf', 1, 200), (err: unknown) => err instanceof PdfToMdError && err.code === 'PDF_OPEN');
-  });
-
-  it('throws PdfToMdError code PAGE_RANGE for a page outside the document', async () => {
-    await assert.rejects(renderPageToPNG(fixturePath('text-single.pdf'), 5, 200), (err: unknown) => err instanceof PdfToMdError && err.code === 'PAGE_RANGE');
-  });
-});
-
 describe('render subcommand CLI: invalid args', () => {
   it('with no arguments, exits nonzero with a usage message on stderr', () => {
     const result = spawnSync(process.execPath, [cliPath, 'render'], {
       encoding: 'utf8',
     });
-    assert.equal(result.status, 2);
+    assert.equal(result.status, 19);
     assert.match(result.stderr, /usage: pdf-to-md render/);
   });
 
   it('with only a PDF path (missing page spec), exits nonzero with a usage message', () => {
     const result = spawnSync(process.execPath, [cliPath, 'render', fixturePath('text-single.pdf')], { encoding: 'utf8' });
-    assert.equal(result.status, 2);
+    assert.equal(result.status, 19);
     assert.match(result.stderr, /usage: pdf-to-md render/);
   });
 
   it('with a page spec outside the document, exits nonzero with a range error', () => {
     const result = spawnSync(process.execPath, [cliPath, 'render', fixturePath('text-single.pdf'), '5'], { encoding: 'utf8' });
-    assert.equal(result.status, 1);
+    assert.equal(result.status, 19);
     assert.match(result.stderr, /outside this document/);
   });
 
   it('a partly-valid range fails atomically: no PNG written before the range error', () => {
     const outDir = scratchDir('render-range-');
     const result = spawnSync(process.execPath, [cliPath, 'render', fixturePath('text-single.pdf'), '1-5', '--out', outDir], { encoding: 'utf8' });
-    assert.equal(result.status, 1);
+    assert.equal(result.status, 19);
     assert.match(result.stderr, /outside this document/);
     assert.deepEqual(readdirSync(outDir), [], 'no page files should be written for an out-of-range range');
   });

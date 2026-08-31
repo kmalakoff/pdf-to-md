@@ -17,8 +17,8 @@ const audit: Command = async (ctx) => {
   for (const line of result.lines) console.log(line);
 
   // MISSING>0 is the severity-1 fail signal: a recognized word this markdown
-  // lost. Exit 1 so the subcommand is usable as a CI gate; strict_deficits from hyphen-join repairs are reported but not failures.
-  if (result.missing > 0) process.exitCode = 1;
+  // lost. Exit with the CLI's error code so the subcommand is usable as a CI gate; strict_deficits from hyphen-join repairs are reported but not failures.
+  if (result.missing > 0) process.exitCode = ctx.errorCode;
 };
 
 export default audit;

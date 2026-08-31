@@ -3,7 +3,7 @@
 import assert from 'node:assert/strict';
 import { writeFileSync } from 'node:fs';
 import path from 'node:path';
-import { auditWords } from '../../src/audit.ts';
+import { auditWords } from '@effortlessmotion/pdf-to-md';
 import { bodyByPage, splitByPageMarker } from '../../src/page-marker.ts';
 import { buildOcrReport } from '../../src/report.ts';
 import { scratchDir } from '../lib/tmp.ts';

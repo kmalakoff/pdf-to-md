@@ -23,8 +23,7 @@ describe('text path: text-single.pdf', () => {
     assert.match(md, /Visitors often stopped to admire the roses before wandering further into the orchard\./);
   });
 
-  it('closes the line-final hyphen into a dictionary word', function (this: Mocha.Context) {
-    if (!HAS_DICT) this.skip(); // dead unless PDF_TO_MD_DICT_PATH overrides — the bundled dictionary is always present
+  it('closes the line-final hyphen into a dictionary word', () => {
     assert.match(md, /Every gardener needs a spark of creative energy to keep the borders alive\./);
     assert.doesNotMatch(md, /creat-\s*ive/);
   });

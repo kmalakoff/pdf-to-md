@@ -12,8 +12,7 @@ import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import cr from 'cr';
-import { auditWords } from '../../src/index.ts';
-import { OUTPUT_VERSION } from '../../src/report.ts';
+import { auditWords, OUTPUT_VERSION } from '@effortlessmotion/pdf-to-md';
 import { expectReport, run } from '../lib/run.ts';
 
 const here = path.dirname(fileURLToPath(import.meta.url));

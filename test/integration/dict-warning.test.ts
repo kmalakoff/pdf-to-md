@@ -14,7 +14,8 @@ const runnerPath = path.join(here, '..', 'lib', 'dict-warning-runner.ts');
 const NO_DICT_PATH = '/nonexistent/pdf-to-md-test-dict-words';
 
 function runWithNoDict(mode: 'text' | 'ocr' | 'analyze-text' | 'analyze-ocr', fixture: string): { markdown: string; warnings: string[] } {
-  const out = execFileSync(process.execPath, [runnerPath, mode, fixturePath(fixture)], {
+  // the flag is required at the 22.13 floor and a no-op where type stripping is default
+  const out = execFileSync(process.execPath, ['--experimental-strip-types', runnerPath, mode, fixturePath(fixture)], {
     encoding: 'utf8',
     env: { ...process.env, PDF_TO_MD_DICT_PATH: NO_DICT_PATH },
   });

@@ -5,7 +5,9 @@ export interface Ctx {
   name: string;
   /** argv after the command word */
   rest: string[];
-  /** print the message and exit 2 — every malformed-invocation path.
+  /** the CLI's fixed non-zero exit code, for result signals like audit loss */
+  readonly errorCode: number;
+  /** print the message and exit with the CLI's error code, on every malformed-invocation path.
    * Readonly property (not method) syntax: TS only applies never-return control-flow analysis to readonly property-typed function members. */
   readonly usageError: (message: string) => never;
 }

@@ -1,1 +1,1 @@
-ignores: ["node-version-use", "ts-dev-stack", "@effortlessmotion/pdf-to-md", "@tesseract.js-data/eng"]
+ignores: ["@effortlessmotion/pdf-to-md", "node-version-use", "ts-dev-stack", "@tesseract.js-data/eng"]

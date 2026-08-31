@@ -7,7 +7,7 @@
 import assert from 'node:assert/strict';
 import { existsSync, rmSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
-import { auditWords } from '../../src/audit.ts';
+import { auditWords } from '@effortlessmotion/pdf-to-md';
 import { CACHE_DIR, CORPUS, corpusPath } from '../lib/corpus.ts';
 import { debugWordsPath, readDebugWords } from '../lib/debug-words.ts';
 import { expectReport, run } from '../lib/run.ts';

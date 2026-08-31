@@ -4,8 +4,8 @@
 import assert from 'node:assert/strict';
 import { writeFileSync } from 'node:fs';
 import path from 'node:path';
-import type { Analysis, OcrWordInput } from '../../src/index.ts';
-import { analyze, auditWords, extractOcr, PdfToMdError, toMarkdown, toText } from '../../src/index.ts';
+import type { Analysis, OcrWordInput } from '@effortlessmotion/pdf-to-md';
+import { analyze, auditWords, extractOcr, PdfToMdError, toMarkdown, toText } from '@effortlessmotion/pdf-to-md';
 import { fixturePath } from '../lib/fixtures.ts';
 import { run } from '../lib/run.ts';
 import { scratchDir } from '../lib/tmp.ts';
@@ -267,7 +267,7 @@ describe('audit subcommand: pdf-to-md audit <words.jsonl> <file.md>', () => {
     assert.match(result.stdout, /MISSING=0/);
   });
 
-  it('exits 1 and reports the missing word when the markdown is missing a recognized word', () => {
+  it('exits 19 and reports the missing word when the markdown is missing a recognized word', () => {
     const dump = path.join(scratchDir('audit-cli-missing-'), 'words.jsonl');
     const { md, status: extractStatus } = run([fixturePath('ocr-single.pdf'), '--stdout', '--ocr', `--debug-words=${dump}`]);
     assert.equal(extractStatus, 0);
@@ -277,7 +277,7 @@ describe('audit subcommand: pdf-to-md audit <words.jsonl> <file.md>', () => {
     writeFileSync(mdPath, md.replace('valley', ''));
 
     const result = run(['audit', dump, mdPath]);
-    assert.equal(result.status, 1, result.stderr);
+    assert.equal(result.status, 19, result.stderr);
     assert.match(result.stdout, /MISSING 1/);
     assert.match(result.stdout, /valley/);
   });

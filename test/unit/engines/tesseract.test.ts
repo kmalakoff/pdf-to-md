@@ -1,13 +1,13 @@
-// sparse-retry.test.ts — the adaptive chart-page second pass (src/engines/tesseract.ts): when a
+// engines/tesseract.test.ts — the adaptive chart-page second pass (src/engines/tesseract.ts): when a
 // page's "prose fraction" (share of recognized words with a run of 3+ letters) drops below 0.6, re-recognizing the same PNG with PSM.SPARSE_TEXT measurably rescues it.
 
 // Unit-tests the pure decision (`shouldRetrySparse`) directly, engine-independent. Full measured
 // numbers live in this file, not in the source comment.
 
 import assert from 'node:assert/strict';
-import { SPARSE_RETRY_PROSE_FRACTION, shouldRetrySparse } from '../../src/engines/tesseract.ts';
-import { fixturePath } from '../lib/fixtures.ts';
-import { expectReport, run } from '../lib/run.ts';
+import { SPARSE_RETRY_PROSE_FRACTION, shouldRetrySparse } from '../../../src/engines/tesseract.ts';
+import { fixturePath } from '../../lib/fixtures.ts';
+import { expectReport, run } from '../../lib/run.ts';
 
 // Real p4 (chart page), PSM.AUTO vs PSM.SPARSE_TEXT, at OCR_RENDER_DPI
 // (288): word count and recall against a 94-word ground truth.

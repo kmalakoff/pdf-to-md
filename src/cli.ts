@@ -9,6 +9,7 @@ import type { Ctx } from './cli/types.ts';
 // __dirname (CJS) or its ESM equivalent, then two fixed hops up to the
 // package root. NOT `import.meta.resolve('pdf-to-md/package.json')` — Node's self-reference lookup throws ERR_MODULE_NOT_FOUND from a file this deep; a location-relative path is stable across both build targets.
 const __dirname = path.dirname(typeof __filename !== 'undefined' ? __filename : fileURLToPath(import.meta.url));
+const ERROR_CODE = 19;
 
 function packageVersion(): string {
   try {
@@ -56,7 +57,7 @@ function usage(name: string): string {
   );
 }
 
-// Thrown errors -> exit 1 with the message verbatim; usage errors exit 2.
+// All failures exit ERROR_CODE: usage errors with the usage text, thrown errors with the message verbatim.
 export default async function cli(argv: string[], name: string): Promise<void> {
   if (argv[0] === '--version' || argv[0] === '-v') {
     console.log(packageVersion());
@@ -67,7 +68,7 @@ export default async function cli(argv: string[], name: string): Promise<void> {
     // for --help is not.
     if (argv.length === 0) {
       console.error(usage(name));
-      process.exit(2);
+      process.exit(ERROR_CODE);
     }
     console.log(`${name} v${packageVersion()}`);
     console.log('');
@@ -80,8 +81,9 @@ export default async function cli(argv: string[], name: string): Promise<void> {
     rest: argv.slice(1),
     usageError(message) {
       console.error(message);
-      process.exit(2);
+      process.exit(ERROR_CODE);
     },
+    errorCode: ERROR_CODE,
   };
 
   try {
@@ -96,6 +98,6 @@ export default async function cli(argv: string[], name: string): Promise<void> {
     }
   } catch (err) {
     console.error((err as Error).message);
-    process.exit(1);
+    process.exit(ERROR_CODE);
   }
 }

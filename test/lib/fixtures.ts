@@ -1,9 +1,11 @@
 // fixtures.ts — builds and caches the suite's 12 synthetic PDFs (no binary
 // fixture is committed). mocha runs one serial process, but concurrent test invocations can race on a cold cache, so generation is guarded by an atomic mkdir lock; the loser polls for the "done" marker.
+
 import { execFileSync } from 'node:child_process';
-import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { safeRmSync } from 'fs-remove-compat';
 import { TMP_ROOT } from './tmp.ts';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -57,7 +59,7 @@ export function fixturesDir(): string {
       }
       writeFileSync(marker, new Date().toISOString());
     } finally {
-      rmSync(lock, { recursive: true, force: true });
+      safeRmSync(lock, { recursive: true, force: true });
     }
   } else {
     const deadline = Date.now() + 60_000;
