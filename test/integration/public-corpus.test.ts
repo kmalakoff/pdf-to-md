@@ -1,14 +1,11 @@
 // public-corpus.test.ts — automated regression coverage (text + OCR paths) against real,
 // checksum-pinned public documents (test/lib/corpus.ts), independent of any private/local file.
 
-// Fetched once and cached under the package's .tmp/ (test/lib/corpus.ts); a test skips cleanly
-// via `this.skip()` when the upstream URL is unreachable, rather than failing the suite for a flaky/gone mirror.
-
 import assert from 'node:assert/strict';
-import { existsSync, rmSync, writeFileSync } from 'node:fs';
+import { writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { auditWords } from '@effortlessmotion/pdf-to-md';
-import { CACHE_DIR, CORPUS, corpusPath } from '../lib/corpus.ts';
+import { corpusPath } from '../lib/corpus.ts';
 import { debugWordsPath, readDebugWords } from '../lib/debug-words.ts';
 import { expectReport, run } from '../lib/run.ts';
 import { scratchDir } from '../lib/tmp.ts';
@@ -19,13 +16,8 @@ function normalize(s: string): string {
 }
 
 describe('public corpus (Phase T): real documents, fetched + checksum-verified on demand', () => {
-  it('layoutparser.pdf: born-digital text-layer PDF parses with plausible structure', async function () {
+  it('layoutparser.pdf: born-digital text-layer PDF parses with plausible structure', async () => {
     const file = await corpusPath('layoutparser.pdf');
-    if (!file) {
-      console.log('corpus file unavailable (offline?): layoutparser.pdf');
-      this.skip();
-      return;
-    }
 
     const report = expectReport(run([file, '--stdout', '--json']));
     // Floors sit well below the measured run (16 pages, 42,702 chars, 2,669 chars/page,
@@ -37,13 +29,8 @@ describe('public corpus (Phase T): real documents, fetched + checksum-verified o
     assert.ok(report.paragraphs > 50, `expected > 50 paragraphs (measured 125), got ${report.paragraphs}`);
   });
 
-  it('c02-22.pdf: scanned page recognizes real content and loses no engine-recognized word', async function () {
+  it('c02-22.pdf: scanned page recognizes real content and loses no engine-recognized word', async () => {
     const file = await corpusPath('c02-22.pdf');
-    if (!file) {
-      console.log('corpus file unavailable (offline?): c02-22.pdf');
-      this.skip();
-      return;
-    }
 
     // Single page, forced OCR (~6s measured) — one CLI run yields both the QA report and
     // (via --debug-words=FILE) the word dump, so the severity-1 check below reuses it.
@@ -70,13 +57,8 @@ describe('public corpus (Phase T): real documents, fetched + checksum-verified o
     assert.deepEqual(missing, [], `words recognized by the engine but missing from c02-22.pdf's markdown output: ${JSON.stringify(missing)}`);
   });
 
-  it('usgs-fs20183035.pdf: chart/infographic page reproduces the review-marker + low-confidence defect class', async function () {
+  it('usgs-fs20183035.pdf: chart/infographic page reproduces the review-marker + low-confidence defect class', async () => {
     const file = await corpusPath('usgs-fs20183035.pdf');
-    if (!file) {
-      console.log('corpus file unavailable (offline?): usgs-fs20183035.pdf');
-      this.skip();
-      return;
-    }
 
     // Forced OCR despite a good text layer — this fixture exists for the OCR path's chart
     // handling (test/lib/corpus.ts). One run (~8.4s measured) yields both the QA report and the word dump.
@@ -105,13 +87,8 @@ describe('public corpus (Phase T): real documents, fetched + checksum-verified o
     assert.equal(audit.missing, 0, `words recognized by the engine but missing from usgs-fs20183035.pdf's markdown output: ${audit.summaryLine}`);
   });
 
-  it('ccitt.pdf: CCITTFax bitonal scan recognizes real text (regression fixture for pdf-open.ts wasmUrl)', async function () {
+  it('ccitt.pdf: CCITTFax bitonal scan recognizes real text (regression fixture for pdf-open.ts wasmUrl)', async () => {
     const file = await corpusPath('ccitt.pdf');
-    if (!file) {
-      console.log('corpus file unavailable (offline?): ccitt.pdf');
-      this.skip();
-      return;
-    }
 
     // Forced OCR, one run yields both the QA report and (via --debug-words=FILE) the word
     // dump, reused for the severity-1 check below — same shape as c02-22.pdf's test above.
@@ -143,13 +120,8 @@ describe('public corpus (Phase T): real documents, fetched + checksum-verified o
     assert.deepEqual(missing, [], `words recognized by the engine but missing from ccitt.pdf's markdown output: ${JSON.stringify(missing)}`);
   });
 
-  it('self-instruct.pdf: genuine two-column ACL layout de-braids into contiguous reading order', async function () {
+  it('self-instruct.pdf: genuine two-column ACL layout de-braids into contiguous reading order', async () => {
     const file = await corpusPath('self-instruct.pdf');
-    if (!file) {
-      console.log('corpus file unavailable (offline?): self-instruct.pdf');
-      this.skip();
-      return;
-    }
 
     const result = run([file, '--stdout', '--json']);
     const report = expectReport(result);
@@ -165,13 +137,8 @@ describe('public corpus (Phase T): real documents, fetched + checksum-verified o
     assert.ok(md.includes(sentence), `expected the abstract's SELF-INSTRUCT sentence to appear contiguous and unbroken in the markdown`);
   });
 
-  it('cjk-survey.pdf: CJK text decodes to real codepoints with no pdfjs cMaps wired in', async function () {
+  it('cjk-survey.pdf: CJK text decodes to real codepoints with no pdfjs cMaps wired in', async () => {
     const file = await corpusPath('cjk-survey.pdf');
-    if (!file) {
-      console.log('corpus file unavailable (offline?): cjk-survey.pdf');
-      this.skip();
-      return;
-    }
 
     // Text path only (openDocument() carries no cMapUrl) — deliberately not OCR'd, the engine is English-only.
     const result = run([file, '--stdout', '--json']);
@@ -185,13 +152,8 @@ describe('public corpus (Phase T): real documents, fetched + checksum-verified o
     assert.ok(!md.includes('�'), 'expected no U+FFFD replacement chars in the markdown — a real cMap-less decode failure would introduce them');
   });
 
-  it('gao-24-107307.pdf: multi-line bulleted findings reconstruct as list items', async function () {
+  it('gao-24-107307.pdf: multi-line bulleted findings reconstruct as list items', async () => {
     const file = await corpusPath('gao-24-107307.pdf');
-    if (!file) {
-      console.log('corpus file unavailable (offline?): gao-24-107307.pdf');
-      this.skip();
-      return;
-    }
 
     const report = expectReport(run([file, '--stdout', '--json']));
     assert.equal(report.path, 'text');
@@ -199,41 +161,12 @@ describe('public corpus (Phase T): real documents, fetched + checksum-verified o
     assert.ok((report.listItems ?? 0) > 0, `expected listItems > 0 (measured 12), got ${report.listItems}`);
   });
 
-  it('usgs-tm9a0.pdf: title/subtitle/chapter/section stack exercises 5 distinct heading sizes', async function () {
+  it('usgs-tm9a0.pdf: title/subtitle/chapter/section stack exercises 5 distinct heading sizes', async () => {
     const file = await corpusPath('usgs-tm9a0.pdf');
-    if (!file) {
-      console.log('corpus file unavailable (offline?): usgs-tm9a0.pdf');
-      this.skip();
-      return;
-    }
 
     const report = expectReport(run([file, '--stdout', '--json']));
     assert.equal(report.path, 'text');
     assert.equal(report.pages, 11, `expected 11 pages, got ${report.pages}`);
     assert.ok((report.headingSizes?.length ?? 0) >= 4, `expected >= 4 distinct heading sizes (measured 5: 22/20/18/16/14pt), got ${report.headingSizes?.length}`);
-  });
-
-  it('corpusPath() resolves to null (never throws) when the network is unreachable', async () => {
-    // Proves the offline-skip branch actually executes: deletes the cached file (else a cache
-    // hit would short-circuit first) then forces the download to fail via corpus.ts's NO_NETWORK_ENV escape hatch.
-    const entry = CORPUS.find((e) => e.name === 'c02-22.pdf');
-    assert.ok(entry, 'c02-22.pdf missing from the CORPUS table');
-    const dest = path.join(CACHE_DIR, entry.name);
-    rmSync(dest, { force: true });
-
-    process.env.PDF_TO_MD_CORPUS_NO_NETWORK = '1';
-    let result: string | null;
-    try {
-      result = await corpusPath(entry.name);
-    } finally {
-      delete process.env.PDF_TO_MD_CORPUS_NO_NETWORK;
-    }
-
-    assert.equal(result, null, 'expected corpusPath() to resolve to null under simulated network failure');
-    assert.equal(existsSync(`${dest}.building`), false, 'a failed build must not leave a .building staging file behind');
-
-    // Restore the cache (best-effort) so a later test run / CI cache warm
-    // isn't left cold by this test having deleted it.
-    await corpusPath(entry.name);
   });
 });
