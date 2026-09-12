@@ -1,7 +1,7 @@
 // corpus.ts — fetch-once cache for the public test corpus: entries are built
 // once per key, staged in `<dest>.building`, and renamed atomically on success; every download is sha256-verified against a pinned hash before the rename.
 import { createHash } from 'node:crypto';
-import { existsSync, mkdirSync, renameSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, renameSync, rmSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { TMP_ROOT } from './tmp.ts';
 
@@ -98,42 +98,42 @@ export const CORPUS: CorpusEntry[] = [
   },
 ];
 
-class CorpusNetworkError extends Error {}
 export class CorpusChecksumError extends Error {}
-
-// Test-only escape hatch: when set, downloads fail immediately as if the
-// network were down, so a test can assert corpusPath() resolves to null without depending on the real network. See public-corpus.test.ts.
-const NO_NETWORK_ENV = 'PDF_TO_MD_CORPUS_NO_NETWORK';
 
 /**
  * Fetch-once cache: returns the cached path if present, else calls
  * `build(stagingPath)` and atomically renames it on success — a throw leaves the staging file un-renamed, never masquerading as cached.
  */
-export async function cached(key: string, build: (stagingPath: string) => Promise<void>): Promise<string> {
+export async function cached(key: string, expectedSha256: string, build: (stagingPath: string) => Promise<void>): Promise<string> {
   mkdirSync(CACHE_DIR, { recursive: true });
   const dest = path.join(CACHE_DIR, key);
-  if (existsSync(dest)) return dest;
+  if (existsSync(dest)) {
+    const hash = createHash('sha256').update(readFileSync(dest)).digest('hex');
+    if (hash === expectedSha256) return dest;
+    rmSync(dest, { force: true });
+  }
 
   const staging = `${dest}.building`;
   rmSync(staging, { force: true });
-  await build(staging);
-  renameSync(staging, dest);
+  try {
+    await build(staging);
+    renameSync(staging, dest);
+  } catch (err) {
+    rmSync(staging, { force: true });
+    throw err;
+  }
   return dest;
 }
 
 async function downloadAndVerify(entry: CorpusEntry, stagingPath: string): Promise<void> {
-  if (process.env[NO_NETWORK_ENV]) {
-    throw new CorpusNetworkError(`network disabled via ${NO_NETWORK_ENV} (test-only offline simulation)`);
-  }
-
   let res: Response;
   try {
     res = await fetch(entry.url, { signal: AbortSignal.timeout(30_000) });
   } catch (err) {
-    throw new CorpusNetworkError(`fetch failed for ${entry.name} <${entry.url}>: ${(err as Error).message}`);
+    throw new Error(`fetch failed for ${entry.name} <${entry.url}>: ${(err as Error).message}`, { cause: err });
   }
   if (!res.ok) {
-    throw new CorpusNetworkError(`fetch ${entry.name} <${entry.url}> returned HTTP ${res.status} ${res.statusText}`);
+    throw new Error(`fetch ${entry.name} <${entry.url}> returned HTTP ${res.status} ${res.statusText}`);
   }
 
   const buf = Buffer.from(await res.arrayBuffer());
@@ -148,21 +148,12 @@ async function downloadAndVerify(entry: CorpusEntry, stagingPath: string): Promi
 
 /**
  * Resolves to the cached path, downloading and verifying on first use.
- * Resolves to null (never throws) on network trouble, so a caller can skip; a checksum mismatch is a real problem and throws instead (CorpusChecksumError).
  */
-export async function corpusPath(name: string): Promise<string | null> {
+export async function corpusPath(name: string): Promise<string> {
   const entry = CORPUS.find((e) => e.name === name);
   if (!entry) {
     throw new Error(`corpusPath: unknown corpus entry ${JSON.stringify(name)} — known: ${CORPUS.map((e) => e.name).join(', ')}`);
   }
 
-  try {
-    return await cached(entry.name, (staging) => downloadAndVerify(entry, staging));
-  } catch (err) {
-    if (err instanceof CorpusNetworkError) {
-      console.error(`corpus: ${entry.name} unavailable, skipping (${err.message})`);
-      return null;
-    }
-    throw err;
-  }
+  return cached(entry.name, entry.sha256, (staging) => downloadAndVerify(entry, staging));
 }
