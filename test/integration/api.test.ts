@@ -60,11 +60,11 @@ describe('pdfToMarkdown: ocr-single.pdf with { ocr: true }', () => {
 });
 
 describe('pdfToMarkdown: ocr-single.pdf with no options', () => {
-  it('auto-falls-back to OCR and reports the fallback in report and warnings', async () => {
+  it('routes the sparse image page to OCR and records it in report and warnings', async () => {
     const { report, warnings } = await pdfToMarkdown(fixturePath('ocr-single.pdf'));
     assert.equal(report.path, 'ocr');
     assert.equal(report.ocrFallback, true);
-    assert.match(warnings[0], /falling back to OCR/i);
+    assert.match(warnings[0], /p1: sparse text layer with image content; using OCR/i);
   });
 });
 

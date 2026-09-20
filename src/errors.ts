@@ -13,6 +13,8 @@ export type PdfToMdErrorCode =
   | 'OCR_PAGE_FAILED'
   /** malformed word-dump input (--words-json / extractOcr words) */
   | 'WORDS_INPUT'
+  /** malformed or insufficient evidence passed to auditWords */
+  | 'AUDIT_INPUT'
   /** malformed Analysis handed to toMarkdown/toText (e.g. an out-of-range
    * wordIndexes entry) — validated fail-fast, whole object checked before any output. */
   | 'ANALYSIS_INPUT';

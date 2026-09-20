@@ -21,18 +21,18 @@ npx pdf-to-md book.pdf page-12.md --pages 12 --ocr
 
 The printed page is the ground truth. OCR can recover text baked into an image, but it can also introduce recognition errors. Compare the two paths on hybrid pages instead of assuming OCR is better.
 
-## Audit recognized OCR words
+## Audit extracted text
 
-`--debug-words` writes every OCR word as JSON lines. The `audit` command checks whether those words occur in the resulting Markdown:
+`--debug-words` writes text-layer items and recognized OCR words as JSON lines. Text-layer items can contain several words; their boxes describe the source items. The `audit` command checks normalized text occurrences on their source pages:
 
 ```bash
-npx pdf-to-md scan.pdf scan.md --ocr --debug-words=scan.words.jsonl
-npx pdf-to-md audit scan.words.jsonl scan.md
+npx pdf-to-md book.pdf book.md --page-markers --debug-words=book.words.jsonl
+npx pdf-to-md audit book.words.jsonl book.md
 ```
 
-An audit with `MISSING > 0` exits nonzero. The word dump is produced by OCR and OCR replay paths. Text-layer extraction does not produce it.
+An audit with `MISSING > 0` exits nonzero. Invalid or empty evidence is an error, not a passing audit. Keep the dump from the same conversion and page selection as the Markdown. The auditor recognizes visible `### pN` and invisible `<!-- pN -->` page markers. Markerless Markdown needs page provenance before it can be audited.
 
-The audit detects missing recognized words. It cannot prove that OCR recognized the correct words or reconstructed their reading order correctly. Use the report and rendered pages for those checks.
+The audit detects missing extracted text under its normalization and hyphen-repair rules. It cannot prove that OCR recognized the correct words, that the PDF's character mappings are accurate, or that reading order, tables and diagrams survived. Added editorial text can also satisfy a missing occurrence, so keep additions separate while auditing. Compare rendered pages for those checks and rerun the audit against the final file after edits.
 
 ## Visible review markers
 
@@ -73,4 +73,4 @@ A typical correction loop is:
 3. Render those pages.
 4. Reconvert only those pages with `--pages` and an adjusted option.
 
-Use `--format=raw` when you need the full analysis, including words, blocks and report, for a programmatic workflow.
+Use `--format=raw` when you need the full analysis, including source items, blocks and report, for a programmatic workflow. Text pages retain PDF text runs with measured boxes; OCR pages retain recognized words. Block `wordIndexes` refer to these per-page source lists. Coordinates are normalized to the page, with the origin at the bottom left and y increasing upward. The raw source list is evidence captured before layout reconstruction, not text recovered from the rendered Markdown.

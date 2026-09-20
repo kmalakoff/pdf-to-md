@@ -8,22 +8,20 @@ import { expectReport, run } from '../lib/run.ts';
 const fixture = fixturePath('ocr-single.pdf');
 
 describe('auto OCR fallback', () => {
-  it('without --ocr: prints a fallback notice on stderr and marks ocrFallback in the JSON report', () => {
+  it('without --ocr: reports page-level routing and marks ocrFallback in the JSON report', () => {
     const result = run([fixture, '--stdout', '--json']);
     const report = expectReport(result);
-    assert.match(result.stderr, /falling back to OCR/i);
+    assert.match(result.stderr, /p1: sparse text layer with image content; using OCR/i);
     assert.equal(report.ocrFallback, true);
     assert.equal(report.path, 'ocr');
     // and the fallback actually recovered real content, not an empty page
     assert.ok(report.chars > 100, `expected recovered OCR content, got ${report.chars} chars`);
   });
 
-  // Pins the fallback notice string under --format=raw|txt too (shared
-  // needsOcrFallback/ocrFallbackNotice helpers, src/extract.ts) so a reword on either side can't go uncaught.
-  it('--format=raw: prints the identical fallback notice and the raw Analysis lands on the OCR path', () => {
+  it('--format=raw: reports page-level routing and the raw Analysis lands on the OCR path', () => {
     const { stdout, stderr, status } = run([fixture, '--stdout', '--format=raw']);
     assert.equal(status, 0, stderr);
-    assert.match(stderr, /chars\/page .* pages are images of text; falling back to OCR \(suppress with --no-ocr\)/);
+    assert.match(stderr, /p1: sparse text layer with image content; using OCR/);
     const parsed = JSON.parse(stdout);
     assert.equal(parsed.report.path, 'ocr');
     assert.equal(parsed.report.ocrFallback, true);

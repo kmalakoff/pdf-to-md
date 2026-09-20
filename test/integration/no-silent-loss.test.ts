@@ -4,20 +4,20 @@
 // Enforced via --debug-words=FILE (dumped pre column-assignment/line-merge/float-filter)
 // against the same run's markdown — mechanical, not a read-through.
 
-// Normalization mirrors src/audit.ts's auditWords() contract (lowercase, strip non-alnum,
-// hyphen-join substring repair) — see there for the full rule, not restated here.
+// The shipped auditor checks page-scoped, occurrence-aware evidence.
 
 // Passes on ocr-centered.pdf/ocr-colbreak.pdf too: their known issues are placement bugs
 // (relocated to floats / see column-break.test.ts), not disappearance.
 
 import assert from 'node:assert/strict';
+import { writeFileSync } from 'node:fs';
+import path from 'node:path';
+import { auditWords } from '@effortlessmotion/pdf-to-md';
+import { safeRmSync } from 'fs-remove-compat';
 import { debugWordsPath, readDebugWords } from '../lib/debug-words.ts';
 import { fixturePath } from '../lib/fixtures.ts';
 import { run } from '../lib/run.ts';
-
-function normalize(s: string): string {
-  return s.toLowerCase().replace(/[^a-z0-9\s]/g, '');
-}
+import { scratchDir } from '../lib/tmp.ts';
 
 const OCR_FIXTURES = ['ocr-single.pdf', 'ocr-twocol.pdf', 'ocr-badge.pdf', 'ocr-colbreak.pdf', 'ocr-centered.pdf'];
 
@@ -28,15 +28,15 @@ describe('no-silent-loss: every engine-recognized word lands somewhere in the ou
       const { md } = run([fixturePath(name), '--stdout', '--ocr', `--debug-words=${dump}`]);
       const words = readDebugWords(dump).map((w) => w.text);
       assert.ok(words.length > 0, `--debug-words produced no words for ${name} — engine or flag broken`);
-
-      const haystack = normalize(md);
-      const missing = [];
-      for (const w of words) {
-        const needle = normalize(w);
-        if (!needle) continue; // pure punctuation token (e.g. a lone "-"), nothing to check
-        if (!haystack.includes(needle)) missing.push(w);
+      const dir = scratchDir('no-silent-loss-');
+      try {
+        const mdPath = path.join(dir, `${name}.md`);
+        writeFileSync(mdPath, md);
+        const audit = auditWords(dump, mdPath);
+        assert.equal(audit.missing, 0, `words recognized by the engine but missing from ${name}'s page-scoped markdown output: ${audit.summaryLine}`);
+      } finally {
+        safeRmSync(dir, { recursive: true, force: true });
       }
-      assert.deepEqual(missing, [], `words recognized by the engine but missing from ${name}'s markdown output: ${JSON.stringify(missing)}`);
     });
   }
 });

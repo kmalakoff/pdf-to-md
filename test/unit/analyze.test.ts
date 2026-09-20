@@ -2,10 +2,11 @@
 // Direct-import coverage (src/index.ts only, never bin/ — see api.test.ts's header) plus one CLI round-trip for the raw word-replay contract.
 
 import assert from 'node:assert/strict';
-import { writeFileSync } from 'node:fs';
+import { readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import type { Analysis, OcrWordInput } from '@effortlessmotion/pdf-to-md';
-import { analyze, auditWords, extractOcr, PdfToMdError, toMarkdown, toText } from '@effortlessmotion/pdf-to-md';
+import { analyze, auditWords, extractOcr, extractText, PdfToMdError, toMarkdown, toText } from '@effortlessmotion/pdf-to-md';
+import { safeRmSync } from 'fs-remove-compat';
 import { fixturePath } from '../lib/fixtures.ts';
 import { run } from '../lib/run.ts';
 import { scratchDir } from '../lib/tmp.ts';
@@ -65,18 +66,56 @@ describe('analyze(): OCR fixture shape and wordIndexes correctness', () => {
 });
 
 describe('analyze(): text path (documented coarser granularity)', () => {
-  it('produces a well-formed Analysis whose toMarkdown/toText both render without throwing', async () => {
+  it('returns source runs with measured boxes and the same captured blocks as extractText', async () => {
     const analysis = await analyze(fixturePath('text-single.pdf'));
+    const extracted = await extractText(fixturePath('text-single.pdf'));
     assert.equal(analysis.report.path, 'text');
     const md = toMarkdown(analysis);
+    assert.equal(md, extracted.markdown);
+    assert.equal(analysis.report.chars, md.length);
     assert.match(md, /Garden Notes/);
     const txt = toText(analysis);
     assert.match(txt, /Garden Notes/);
     assert.doesNotMatch(txt, /^#/m);
+    assert.ok(
+      analysis.pages[0].words.some((word) => /Garden Notes/.test(word.text)),
+      'expected an un-split source text run'
+    );
+    assert.ok(
+      analysis.pages[0].words.every((word) => word.box.w > 0 && word.box.h > 0),
+      'source runs must retain measured bounds'
+    );
+    for (const block of analysis.pages[0].blocks) {
+      assert.ok(block.wordIndexes.length > 0, `expected source provenance for ${block.type} block`);
+      for (const index of block.wordIndexes) assert.ok(index >= 0 && index < analysis.pages[0].words.length);
+    }
+  });
+
+  it('delivers selected text source runs once, with original page numbers', async () => {
+    const calls: OcrWordInput[][] = [];
+    await extractText(fixturePath('text-twopage.pdf'), {
+      pages: { first: 2 },
+      onWords: (words) => calls.push(words),
+    });
+    assert.equal(calls.length, 1);
+    assert.ok(calls[0].length > 0);
+    assert.ok(calls[0].every((word) => word.page === 2));
+    assert.ok(calls[0].every((word) => word.w > 0 && word.h > 0));
+  });
+
+  it('keeps page-marker headings and adjacent list items identical to extractText', async () => {
+    const opts = { pageMarkers: true };
+    const analysis = await analyze(fixturePath('text-single.pdf'), opts);
+    const extracted = await extractText(fixturePath('text-single.pdf'), opts);
+    const markdown = toMarkdown(analysis, opts);
+    assert.equal(markdown, extracted.markdown);
+    assert.equal(analysis.report.chars, markdown.length);
+    assert.match(markdown, /^#### Garden Notes$/m);
+    assert.match(markdown, /- Water the roses every morning\n- Trim the hedges before summer/);
   });
 });
 
-describe('AnalysisWord.box: ONE coordinate contract across paths (normalized [0,1], origin bottom-left, y up)', () => {
+describe('AnalysisWord.box: source-run and OCR coordinate contracts', () => {
   // Range alone doesn't pin the contract — an inverted y axis still lands in [0,1] (a
   // top-of-page heading could measure y=0.065 instead of 0.935); reading order requires the first word to sit HIGHER (larger y) than the last on both paths.
   it('y increases upward on both paths: reading order runs high-y to low-y', async () => {
@@ -95,7 +134,7 @@ describe('AnalysisWord.box: ONE coordinate contract across paths (normalized [0,
     }
   });
 
-  it('every word box on both the TEXT path and the OCR path lands in [0,1]', async () => {
+  it('fixture boxes on both paths are page fractions', async () => {
     const textAnalysis = await analyze(fixturePath('text-single.pdf'));
     const ocrAnalysis = await analyze(fixturePath('ocr-single.pdf'), { path: 'ocr' });
 
@@ -118,10 +157,9 @@ describe('AnalysisWord.box: ONE coordinate contract across paths (normalized [0,
     }
   });
 
-  it('the TEXT path box.w stays 0 (not measured) even after unit normalization — normalizing never fakes a width', async () => {
+  it('the TEXT path uses measured source-run widths rather than fabricated line boxes', async () => {
     const analysis = await analyze(fixturePath('text-single.pdf'));
-    const allZero = analysis.pages.every((p) => p.words.every((w) => w.box.w === 0));
-    assert.ok(allZero, 'text-path box.w must stay exactly 0');
+    assert.ok(analysis.pages.every((page) => page.words.every((word) => word.box.w > 0)));
   });
 });
 
@@ -154,7 +192,7 @@ describe('toMarkdown/toText: fail-fast ANALYSIS_INPUT on a malformed Analysis', 
     ({
       outputVersion: 1,
       report: { path: 'ocr' },
-      pages: [{ page: 1, words: [{ text: 'x', box: { x: 0, y: 0, w: 0, h: 0 } }], blocks: [block] }],
+      pages: [{ page: 1, path: 'ocr', words: [{ text: 'x', box: { x: 0, y: 0, w: 0, h: 0 } }], blocks: [block] }],
     }) as unknown as Analysis;
   const assertAnalysisInput = (analysis: Analysis) => {
     for (const render of [toMarkdown, toText]) {
@@ -234,6 +272,51 @@ describe('raw round-trip: words from an Analysis feed back through extractOcr an
   });
 });
 
+describe('analyze(): selected OCR replay evidence', () => {
+  it('filters source evidence before callbacks, blocks, and reports', async () => {
+    const calls: OcrWordInput[][] = [];
+    const analysis = await analyze(
+      {
+        words: [
+          { page: 1, text: 'discarded', x: 0.1, y: 0.8, w: 0.1, h: 0.02 },
+          { page: 2, text: 'retained', x: 0.1, y: 0.8, w: 0.1, h: 0.02 },
+        ],
+      },
+      { path: 'ocr', pages: { first: 2 }, onWords: (words) => calls.push(words) }
+    );
+    assert.equal(calls.length, 1);
+    assert.deepEqual(
+      calls[0].map((word) => word.page),
+      [2]
+    );
+    assert.deepEqual(
+      analysis.pages.map((page) => page.page),
+      [2]
+    );
+    assert.deepEqual(
+      analysis.report.pageStats.map((page) => page.page),
+      [2]
+    );
+    assert.match(toMarkdown(analysis), /^### p2$/m);
+  });
+});
+
+describe('CLI debug words: text source evidence', () => {
+  for (const format of ['md', 'txt', 'raw'] as const) {
+    it(`${format}: writes one source-run dump with measured bounds`, () => {
+      const dump = path.join(scratchDir(`debug-${format}-`), 'words.jsonl');
+      const result = run([fixturePath('text-single.pdf'), '--stdout', `--format=${format}`, `--debug-words=${dump}`]);
+      assert.equal(result.status, 0, result.stderr);
+      const words = readFileSync(dump, 'utf8')
+        .trim()
+        .split('\n')
+        .map((line) => JSON.parse(line) as OcrWordInput);
+      assert.ok(words.some((word) => /Garden Notes/.test(word.text)));
+      assert.ok(words.every((word) => word.w > 0 && word.h > 0));
+    });
+  }
+});
+
 describe('severity-1 audit (shipped auditor) against a raw Analysis word list', () => {
   it('auditWords reports MISSING=0 against the markdown analyze() itself measured its report from', async () => {
     const analysis = await analyze(fixturePath('ocr-chart.pdf'), { path: 'ocr' });
@@ -255,6 +338,21 @@ describe('severity-1 audit (shipped auditor) against a raw Analysis word list', 
 });
 
 describe('audit subcommand: pdf-to-md audit <words.jsonl> <file.md>', () => {
+  it('exits 19 with an actionable error for malformed audit evidence', () => {
+    const dir = scratchDir('audit-cli-invalid-');
+    try {
+      const dump = path.join(dir, 'words.jsonl');
+      const mdPath = path.join(dir, 'out.md');
+      writeFileSync(dump, '{not json}\n');
+      writeFileSync(mdPath, '### p1\ntext\n');
+      const result = run(['audit', dump, mdPath]);
+      assert.equal(result.status, 19, result.stderr);
+      assert.match(result.stderr, /audit evidence is invalid: line 1 is not valid JSON/);
+    } finally {
+      safeRmSync(dir, { recursive: true, force: true });
+    }
+  });
+
   it('exits 0 and reports MISSING=0 on a clean pair', () => {
     const dump = path.join(scratchDir('audit-cli-'), 'words.jsonl');
     const { md, status: extractStatus } = run([fixturePath('ocr-single.pdf'), '--stdout', '--ocr', `--debug-words=${dump}`]);

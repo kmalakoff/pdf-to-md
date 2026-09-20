@@ -1,5 +1,6 @@
 // analyze() plus the OCR-path core (buildOcrAnalysisPages) that extractOcr
-// shares with it — same buildPageOCR -> emitPage -> renderPagesToMarkdown pipeline, so OCR-path markdown is byte-identical by construction, not two implementations kept in sync by hand. The TEXT path is NOT shared this way (see analyzeText).
+// shares with it. Text analysis uses text-analysis.ts so it captures the same
+// blocks, source runs, and report input as extractText.
 import { collect, pageCount } from './collect.ts';
 import { dictAvailable, dictUnavailableWarning } from './dict.ts';
 import type { EmitBlock } from './emit.ts';
@@ -10,11 +11,10 @@ import { recognizePdf } from './engines/tesseract.ts';
 import type { ExtractOcrOptions, ExtractTextOptions, OcrWordInput } from './extract.ts';
 import type { PageOCR, Tuning, Word } from './geometry.ts';
 import { buildPageOCR, DEFAULT_TUNING, headingLevels } from './geometry.ts';
-import { toLines } from './lines.ts';
-import { buildMarkdown } from './markdown.ts';
 import { renderPagesToMarkdown } from './render-analysis.ts';
-import { buildOcrReport, buildReport, OUTPUT_VERSION } from './report.ts';
-import type { Analysis, AnalysisBlock, AnalysisPage, AnalysisWord, Line, PageLines } from './types.ts';
+import { buildOcrReport, OUTPUT_VERSION } from './report.ts';
+import { buildTextAnalysis } from './text-analysis.ts';
+import type { Analysis, AnalysisBlock, AnalysisPage, AnalysisWord } from './types.ts';
 import { validateOcrAnalysisInput, validatePages, validateWordsInput } from './validate.ts';
 
 /** analyze(pdf) with the default/'text' path — OCR-only fields don't exist
@@ -71,6 +71,7 @@ export async function buildOcrAnalysisPages(input: { pdfPath: string } | { words
     words = result.words;
   }
 
+  words = words.filter((word) => word.page >= first && word.page <= last);
   opts.onWords?.(words);
 
   // Stable per-page index, assigned in recognition/replay order — this IS
@@ -112,6 +113,7 @@ export async function buildOcrAnalysisPages(input: { pdfPath: string } | { words
 
     pages.push({
       page: pn,
+      path: 'ocr',
       words: (byPage.get(pn) ?? []).map(toAnalysisWord),
       blocks,
     });
@@ -129,55 +131,21 @@ async function analyzeOcr(input: { pdfPath: string } | { words: OcrWordInput[] }
   return { outputVersion: OUTPUT_VERSION, report, pages };
 }
 
-// TEXT path: deliberately NOT routed through the OCR shared-core pattern —
-// buildMarkdown's reflow/hyphen-rejoin/list rules don't fit the 4-type Analysis block union, so this is an independent, intentionally coarser reconstruction (one word/block per visual LINE) — honest, not byte-identical to extractText (see AnalysisPage, src/types.ts).
-
-// Converts a text-path Line's page-point geometry (src/lines.ts) into the
-// same normalized box contract the OCR path uses (see AnalysisPage.words) — only the coordinate SYSTEM changes; `box.y` anchors on the line's baseline, `box.w` stays 0.
-function textLineBox(l: Line, dims: { width: number; height: number }): AnalysisWord['box'] {
-  const { width, height } = dims;
-  return {
-    x: width > 0 ? l.x / width : 0,
-    y: height > 0 ? (height - l.y) / height : 0,
-    w: 0,
-    h: height > 0 ? l.h / height : 0,
-  };
-}
-
 async function analyzeText(pdfPath: string, opts: ExtractTextOptions): Promise<Analysis> {
   const warn = (m: string) => opts.onWarning?.(m);
   if (!dictAvailable()) warn(dictUnavailableWarning());
   const range = opts.pages ? { first: opts.pages.first, last: opts.pages.last ?? opts.pages.first } : {};
-  const { numPages, pages, heightChars } = await collect(pdfPath, range);
-  const pageDims = new Map(pages.map((p) => [p.page, { width: p.width, height: p.height }]));
-  const pageLines: PageLines[] = pages.map((p) => ({ page: p.page, lines: toLines(p) }));
-  const pageMarkers = opts.pageMarkers ?? false;
-  const { md, stats, bodyH, headingSizes } = buildMarkdown(pageLines, heightChars, { pageMarkers });
-  const statsMd = pageMarkers ? md : buildMarkdown(pageLines, heightChars, { pageMarkers: true }).md;
-
-  const hybridPages = pages.filter((p) => p.largeImage).map((p) => p.page);
+  const collected = await collect(pdfPath, range);
+  const result = buildTextAnalysis(collected, opts.pageMarkers ?? false);
+  const hybridPages = collected.pages.filter((page) => page.largeImage).map((page) => page.page);
   for (const n of hybridPages) {
     warn(`p${n}: text layer used but page carries large image(s); if it has baked-in text this output won't have it — compare (don't blindly replace) against --pages ${n} --ocr, which can itself introduce errors`);
   }
-
-  // Report is measured from the REAL markdown above — accurate regardless of
-  // the coarser block/word reconstruction below.
-  const report = buildReport({ numPages, md, statsMd, stats, bodyH, headingSizes, hybridPages });
-
-  // headingSizes is offset-independent — reused directly, then re-leveled
-  // here with offset 0 regardless of `opts.pageMarkers` (see AnalysisPage).
-  const levelOf = new Map(headingSizes.slice(0, 6).map((h, i) => [h, Math.min(6, i + 1)]));
-  const analysisPages: AnalysisPage[] = pageLines.map(({ page, lines }) => {
-    const dims = pageDims.get(page) as { width: number; height: number };
-    const words: AnalysisWord[] = lines.map((l) => ({ text: l.text, box: textLineBox(l, dims) }));
-    const blocks: AnalysisBlock[] = lines.map((l, i) => {
-      const level = levelOf.get(l.h);
-      return level !== undefined ? { type: 'heading' as const, text: l.text, level, wordIndexes: [i] } : { type: 'paragraph' as const, text: l.text, wordIndexes: [i] };
-    });
-    return { page, words, blocks };
-  });
-
-  return { outputVersion: OUTPUT_VERSION, report, pages: analysisPages };
+  for (const page of collected.pages.filter((page) => page.textChars === 0 && !page.hasImage)) {
+    warn(`p${page.page}: no extractable text; the page may be blank or contain only vector content`);
+  }
+  opts.onWords?.(result.words);
+  return result.analysis;
 }
 
 /**
@@ -185,7 +153,9 @@ async function analyzeText(pdfPath: string, opts: ExtractTextOptions): Promise<A
  * `Analysis`: plain, JSON-serializable per-page `words`/`blocks` plus the same QA `report` the other entry points return. Render with toMarkdown()/toText(), or hand-edit/splice it (no merge API — see toMarkdown's doc comment).
  *
  * @param input a bare pdf path, or `{ words }` to replay a dump (always analyzed as OCR) — unlike extractOcr, never `{ pdfPath }`
- * @param opts see {@link AnalyzeOptions}; for a pdf path, `opts.path` picks 'text' (default) or 'ocr' — analyze() makes no auto-fallback decision (that's pdfToMarkdown's job)
+ * @param opts see {@link AnalyzeOptions}; for a PDF path, `path` explicitly
+ * selects text (default) or OCR. Automatic per-page routing belongs to
+ * pdfToMarkdown and the CLI output formats.
  */
 export async function analyze(input: string | { words: OcrWordInput[] }, opts: AnalyzeOptions = {}): Promise<Analysis> {
   validatePages(opts.pages);

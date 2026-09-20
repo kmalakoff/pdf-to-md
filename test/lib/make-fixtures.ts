@@ -162,6 +162,26 @@ async function writeImagePDF(outPath: string, draw: (s: RasterSurface) => void, 
   writeFileSync(outPath, await doc.save());
 }
 
+async function writeMixedPDF(outPath: string, drawText: (s: VectorSurface) => void, drawImage: (s: RasterSurface) => void, scale = 2.0): Promise<void> {
+  const doc = await PDFDocument.create();
+  const regular = await doc.embedFont(StandardFonts.Helvetica);
+  const bold = await doc.embedFont(StandardFonts.HelveticaBold);
+  const textPage = doc.addPage([PAGE_WIDTH, PAGE_HEIGHT]);
+  drawText(vectorSurface(textPage, regular, bold));
+
+  const w = Math.round(PAGE_WIDTH * scale);
+  const h = Math.round(PAGE_HEIGHT * scale);
+  const canvas = createCanvas(w, h);
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle = 'white';
+  ctx.fillRect(0, 0, w, h);
+  drawImage(rasterSurface(ctx, scale, PAGE_HEIGHT));
+  const image = await doc.embedPng(await canvas.encode('png'));
+  const imagePage = doc.addPage([PAGE_WIDTH, PAGE_HEIGHT]);
+  imagePage.drawImage(image, { x: 0, y: 0, width: PAGE_WIDTH, height: PAGE_HEIGHT });
+  writeFileSync(outPath, await doc.save());
+}
+
 /**
  * Small raster "label" with baked-in words, returned as a PNG buffer to
  * embed; its pixel dimensions become the image's declared width/height, which is what hasLargeImage inspects.
@@ -559,6 +579,18 @@ async function main() {
         label: 'p2-heading',
       });
       place(s, 'The second page describes a windmill turning above golden summer fields.', 72, 680, 12, { label: 'p2-sentence' });
+    }
+  );
+
+  await writeMixedPDF(
+    path.join(outDir, 'mixed-text-ocr.pdf'),
+    (s) => {
+      place(s, 'Harbor Record', 72, 720, 24, { bold: true, label: 'mixed-text-heading' });
+      place(s, 'The first page keeps its searchable text layer intact.', 72, 680, 12, { label: 'mixed-text-body' });
+    },
+    (s) => {
+      place(s, 'Mountain Journal', 60, 700, 48, { bold: true, label: 'mixed-image-heading' });
+      place(s, 'The second page requires OCR recognition.', 60, 640, 22, { label: 'mixed-image-body' });
     }
   );
 

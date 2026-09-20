@@ -20,7 +20,7 @@ const normalize = foldTypographic;
 interface LineDraft {
   col: number;
   y: number;
-  parts: Glyph[];
+  parts: Array<{ glyph: Glyph; index: number }>;
 }
 
 export function toLines({ glyphs, width }: Pick<CollectedPage, 'glyphs' | 'width'>): Line[] {
@@ -33,25 +33,27 @@ export function toLines({ glyphs, width }: Pick<CollectedPage, 'glyphs' | 'width
 
   // Group on y with a tolerance that scales with font size.
   const lines: LineDraft[] = [];
-  for (const g of [...glyphs].sort((a, b) => a.y - b.y || a.x - b.x)) {
+  const indexedGlyphs = glyphs.map((glyph, index) => ({ glyph, index }));
+  for (const part of indexedGlyphs.sort((a, b) => a.glyph.y - b.glyph.y || a.glyph.x - b.glyph.x)) {
+    const { glyph: g } = part;
     // NOTE: start-x assignment can misfile a gutter-straddling glyph; an
     // overlap-based alternative was tried and reshuffled stray numerals with
     // no measured win, so start-x stays (src/geometry.ts's OCR path assigns by x-span overlap instead, where the mis-assignment is measured).
     const col = twoCol && g.x > mid ? 1 : 0;
     const last = lines.at(-1);
     if (last && last.col === col && Math.abs(last.y - g.y) < Math.max(2, g.h * 0.5)) {
-      last.parts.push(g);
+      last.parts.push(part);
       last.y = (last.y + g.y) / 2;
-    } else lines.push({ col, y: g.y, parts: [g] });
+    } else lines.push({ col, y: g.y, parts: [part] });
   }
   lines.sort((a, b) => a.col - b.col || a.y - b.y); // column, then down the page
 
   return lines
     .map((l): Line => {
-      const parts = l.parts.sort((a, b) => a.x - b.x);
+      const parts = l.parts.sort((a, b) => a.glyph.x - b.glyph.x);
       let t = '';
       let prev: Glyph | null = null;
-      for (const cur of parts) {
+      for (const { glyph: cur } of parts) {
         // insert a space when the measured gap is wider than intra-word kerning
         if (prev && cur.x - (prev.x + prev.w) > prev.h * 0.12 && !/\s$/.test(t) && !/^\s/.test(cur.s)) t += ' ';
         t += cur.s;
@@ -60,13 +62,14 @@ export function toLines({ glyphs, width }: Pick<CollectedPage, 'glyphs' | 'width
       // Line height = the char-weighted dominant height, not the max: a small
       // decorative large-face numeral must not promote a body line to a heading.
       const byH = new Map<number, number>();
-      for (const p of parts) byH.set(p.h, (byH.get(p.h) || 0) + p.s.length);
+      for (const { glyph: p } of parts) byH.set(p.h, (byH.get(p.h) || 0) + p.s.length);
       return {
         text: normalize(t).replace(/\s+/g, ' ').trim(),
-        x: parts[0].x,
+        x: parts[0].glyph.x,
         y: l.y,
         h: [...byH.entries()].sort((a, b) => b[1] - a[1])[0][0],
         col: l.col,
+        wordIndexes: parts.map(({ index }) => index),
       };
     })
     .filter((l) => l.text);

@@ -5,6 +5,7 @@ import assert from 'node:assert/strict';
 import { writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { auditWords } from '@effortlessmotion/pdf-to-md';
+import { safeRmSync } from 'fs-remove-compat';
 import { corpusPath } from '../lib/corpus.ts';
 import { debugWordsPath, readDebugWords } from '../lib/debug-words.ts';
 import { expectReport, run } from '../lib/run.ts';
@@ -13,6 +14,18 @@ import { scratchDir } from '../lib/tmp.ts';
 // Same normalization as no-silent-loss.test.ts's severity-1 check — see there for the rule.
 function normalize(s: string): string {
   return s.toLowerCase().replace(/[^a-z0-9\s]/g, '');
+}
+
+function assertNoAuditedLoss(dump: string, md: string, name: string): void {
+  const dir = scratchDir(`${name}-corpus-`);
+  try {
+    const mdPath = path.join(dir, `${name}.md`);
+    writeFileSync(mdPath, md);
+    const audit = auditWords(dump, mdPath);
+    assert.equal(audit.missing, 0, `words recognized by the engine but missing from ${name}'s page-scoped markdown output: ${audit.summaryLine}`);
+  } finally {
+    safeRmSync(dir, { recursive: true, force: true });
+  }
 }
 
 describe('public corpus (Phase T): real documents, fetched + checksum-verified on demand', () => {
@@ -46,15 +59,7 @@ describe('public corpus (Phase T): real documents, fetched + checksum-verified o
     const words = readDebugWords(dump).map((w) => w.text);
     assert.ok(words.length > 100, `expected > 100 recognized words (measured 304), got ${words.length} — engine or flag broken?`);
 
-    // Severity-1 invariant — see no-silent-loss.test.ts's header comment.
-    const haystack = normalize(md);
-    const missing: string[] = [];
-    for (const w of words) {
-      const needle = normalize(w);
-      if (!needle) continue; // pure punctuation token, nothing to check
-      if (!haystack.includes(needle)) missing.push(w);
-    }
-    assert.deepEqual(missing, [], `words recognized by the engine but missing from c02-22.pdf's markdown output: ${JSON.stringify(missing)}`);
+    assertNoAuditedLoss(dump, md, 'c02-22');
   });
 
   it('usgs-fs20183035.pdf: chart/infographic page reproduces the review-marker + low-confidence defect class', async () => {
@@ -81,10 +86,7 @@ describe('public corpus (Phase T): real documents, fetched + checksum-verified o
 
     // Severity-1 invariant, same as c02-22.pdf's check above, via the SHIPPED auditor
     // (src/audit.ts) rather than a hand-rolled scan — the review marker flags garbage, never loses it.
-    const mdPath = path.join(scratchDir('usgs-corpus-'), 'usgs-fs20183035.md');
-    writeFileSync(mdPath, md);
-    const audit = auditWords(dump, mdPath);
-    assert.equal(audit.missing, 0, `words recognized by the engine but missing from usgs-fs20183035.pdf's markdown output: ${audit.summaryLine}`);
+    assertNoAuditedLoss(dump, md, 'usgs-fs20183035');
   });
 
   it('ccitt.pdf: CCITTFax bitonal scan recognizes real text (regression fixture for pdf-open.ts wasmUrl)', async () => {
@@ -110,14 +112,7 @@ describe('public corpus (Phase T): real documents, fetched + checksum-verified o
     const haystack = normalize(md);
     assert.ok(haystack.includes(normalize('LinnSequencer')) || haystack.includes(normalize('Sequencer')), 'expected "LinnSequencer" or "Sequencer" to appear in the recognized markdown');
 
-    // Severity-1 invariant, same as c02-22.pdf's check above.
-    const missing: string[] = [];
-    for (const w of words) {
-      const needle = normalize(w);
-      if (!needle) continue;
-      if (!haystack.includes(needle)) missing.push(w);
-    }
-    assert.deepEqual(missing, [], `words recognized by the engine but missing from ccitt.pdf's markdown output: ${JSON.stringify(missing)}`);
+    assertNoAuditedLoss(dump, md, 'ccitt');
   });
 
   it('self-instruct.pdf: genuine two-column ACL layout de-braids into contiguous reading order', async () => {

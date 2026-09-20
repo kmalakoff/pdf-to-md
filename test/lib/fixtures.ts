@@ -20,7 +20,7 @@ function sourceTag(): string {
   return (h >>> 0).toString(36);
 }
 
-const FIXTURE_NAMES = ['text-single.pdf', 'text-twocol.pdf', 'text-twopage.pdf', 'text-hybrid.pdf', 'ocr-single.pdf', 'ocr-twocol.pdf', 'ocr-badge.pdf', 'ocr-centered.pdf', 'ocr-colbreak.pdf', 'ocr-book.pdf', 'ocr-chart.pdf', 'ocr-chart-only.pdf'];
+const FIXTURE_NAMES = ['text-single.pdf', 'text-twocol.pdf', 'text-twopage.pdf', 'mixed-text-ocr.pdf', 'text-hybrid.pdf', 'ocr-single.pdf', 'ocr-twocol.pdf', 'ocr-badge.pdf', 'ocr-centered.pdf', 'ocr-colbreak.pdf', 'ocr-book.pdf', 'ocr-chart.pdf', 'ocr-chart-only.pdf'];
 
 let cachedDir: string | null = null;
 

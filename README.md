@@ -1,6 +1,6 @@
 # @effortlessmotion/pdf-to-md
 
-Convert born-digital and scanned PDFs to Markdown. `pdf-to-md` reads an existing text layer first and falls back to local OCR for image-only pages. It returns a QA report and marks text it cannot place reliably instead of silently dropping it.
+Convert born-digital and scanned PDFs to Markdown. `pdf-to-md` reads each page's text layer and uses local OCR where needed. It returns a QA report; the OCR path marks text it cannot place reliably for review.
 
 Use it when you need editable Markdown plus evidence about conversion quality. OCR runs locally and makes no cloud calls.
 
@@ -23,7 +23,7 @@ The package installs the `pdf-to-md` executable:
 npx pdf-to-md book.pdf
 ```
 
-This writes `book.md`. If the PDF has too little embedded text, the command automatically uses OCR and reports that choice on stderr.
+This writes `book.md`. Pages with too little embedded text are assessed individually for OCR, so one document can use both extraction paths. The command reports those choices on stderr.
 
 Specify an output path or force OCR when needed:
 
@@ -33,7 +33,7 @@ npx pdf-to-md scan.pdf notes.md --ocr
 
 A conversion can produce ordinary Markdown plus visible review markers:
 
-```markdown
+```text
 ## DAILY TALLIES
 
 Every skiff was counted at the north pier.
@@ -51,7 +51,7 @@ import { pdfToMarkdown } from '@effortlessmotion/pdf-to-md';
 const { markdown, report, warnings } = await pdfToMarkdown('book.pdf');
 
 console.log(markdown);
-console.log(report.path); // "text" or "ocr"
+console.log(report.path); // "text", "ocr", or "mixed"
 console.warn(warnings);
 ```
 
@@ -91,7 +91,7 @@ Common flags:
 - `--stdout` writes the converted content to stdout.
 - `--json` prints the QA report.
 - `--format md|txt|raw` selects Markdown, plain text or analysis JSON.
-- `--debug-words=FILE` writes recognized OCR words for `pdf-to-md audit`.
+- `--debug-words=FILE` writes source text items or recognized OCR words for `pdf-to-md audit`. Use `--page-markers` when producing Markdown for a page-by-page audit.
 - `--dpi=N` changes OCR render resolution. The default is 288; higher values are not always more accurate.
 
 Run `npx pdf-to-md --help` for the complete option list.

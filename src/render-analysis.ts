@@ -16,13 +16,14 @@ function validateAnalysis(analysis: unknown): asserts analysis is Analysis {
   const a = analysis as Record<string, unknown>;
   if (typeof a.report !== 'object' || a.report === null) fail('Analysis.report must be an object');
   const path = (a.report as Record<string, unknown>).path;
-  if (path !== 'text' && path !== 'ocr') fail(`Analysis.report.path must be "text" or "ocr" (got ${JSON.stringify(path)})`);
+  if (path !== 'text' && path !== 'ocr' && path !== 'mixed') fail(`Analysis.report.path must be "text", "ocr", or "mixed" (got ${JSON.stringify(path)})`);
   if (!Array.isArray(a.pages)) fail('Analysis.pages must be an array');
 
   for (const [pi, page] of (a.pages as unknown[]).entries()) {
     if (typeof page !== 'object' || page === null) fail(`Analysis.pages[${pi}] must be an object`);
     const p = page as Record<string, unknown>;
     if (typeof p.page !== 'number') fail(`Analysis.pages[${pi}].page must be a number`);
+    if (p.path !== 'text' && p.path !== 'ocr') fail(`Analysis.pages[${pi}].path must be "text" or "ocr" (got ${JSON.stringify(p.path)})`);
     if (!Array.isArray(p.words)) fail(`Analysis.pages[${pi}].words must be an array`);
     for (const [wi, w] of (p.words as unknown[]).entries()) {
       if (typeof w !== 'object' || w === null || typeof (w as Record<string, unknown>).text !== 'string') {
@@ -48,6 +49,7 @@ function validateAnalysis(analysis: unknown): asserts analysis is Analysis {
       } else if (block.level !== undefined) {
         fail(`Analysis.pages[${pi}].blocks[${bi}].level is only allowed on heading blocks (got a ${JSON.stringify(block.type)} block with level ${JSON.stringify(block.level)})`);
       }
+      if (block.tight !== undefined && typeof block.tight !== 'boolean') fail(`Analysis.pages[${pi}].blocks[${bi}].tight must be boolean when present`);
       if (!Array.isArray(block.wordIndexes)) fail(`Analysis.pages[${pi}].blocks[${bi}].wordIndexes must be an array`);
       for (const idx of block.wordIndexes as unknown[]) {
         if (typeof idx !== 'number' || !Number.isInteger(idx) || idx < 0 || idx >= wordCount) {
@@ -73,7 +75,7 @@ export function renderPagesToMarkdown(pages: AnalysisPage[], opts: { forcePageMa
   for (const page of pages) {
     if (opts.forcePageMarkers) md += `\n${pageMarkerLine(page.page)}\n\n`;
     else if (opts.pageMarkers) md += `${pageMarkerLine(page.page)}\n\n`;
-    for (const block of page.blocks) md += `${renderBlockLiteral(block)}\n\n`;
+    for (const block of page.blocks) md += `${renderBlockLiteral(block)}${block.tight ? '\n' : '\n\n'}`;
   }
   return md;
 }
@@ -97,14 +99,16 @@ export function renderPagesToText(pages: AnalysisPage[]): string {
 
 /**
  * Render an Analysis to markdown. PURE and fail-fast over any well-formed Analysis (including hand-built/spliced ones) — throws `PdfToMdError`/`'ANALYSIS_INPUT'` before any output on a malformed one.
- * OCR-origin output is byte-identical to extractOcr's own markdown (shared core); text-origin is NOT byte-identical to extractText's (see `AnalysisPage.words`, `src/types.ts`).
+ * OCR-origin output is byte-identical to extractOcr's own markdown. Text
+ * output comes from the same captured blocks as extractText. Mixed output
+ * always includes page markers because adjacent pages have different producers.
  *
  * @param analysis the Analysis to render (from analyze(), or hand-built/spliced)
- * @param opts.pageMarkers text-origin only; an OCR-origin Analysis always carries markers
+ * @param opts.pageMarkers text-origin only; OCR and mixed Analysis values always carry markers
  */
 export function toMarkdown(analysis: Analysis, opts: { pageMarkers?: boolean } = {}): string {
   validateAnalysis(analysis);
-  const isOcr = analysis.report.path === 'ocr';
+  const isOcr = analysis.report.path !== 'text';
   const md = renderPagesToMarkdown(analysis.pages, { forcePageMarkers: isOcr, pageMarkers: !!opts.pageMarkers });
   return isOcr ? md : `${md.trim()}\n`;
 }

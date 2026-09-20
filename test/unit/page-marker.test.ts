@@ -4,13 +4,19 @@ import assert from 'node:assert/strict';
 import { writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { auditWords } from '@effortlessmotion/pdf-to-md';
-import { bodyByPage, splitByPageMarker } from '../../src/page-marker.ts';
+import { bodyByPage, countPageMarkers, isPageMarkerLine, splitByPageMarker } from '../../src/page-marker.ts';
 import { buildOcrReport } from '../../src/report.ts';
 import { scratchDir } from '../lib/tmp.ts';
 
 const DUP_MD = '### p1\nfoo alpha here.\n\n### p2\nbar bravo line.\n\n### p1\nbaz charlie tail.\n';
+const COMMENT_MD = '<!-- p1 -->\nalpha\n\n<!-- p2 -->\nbravo\n\n<!-- p1 -->\ncharlie\n';
 
 describe('page markers with a duplicate "### pN"', () => {
+  it('keeps marker counts independent of predicate call order', () => {
+    assert.equal(isPageMarkerLine('### p1'), true);
+    assert.equal(countPageMarkers('### p1\nhello\n'), 1);
+  });
+
   it('splitByPageMarker keeps one entry per occurrence, in order', () => {
     const parts = splitByPageMarker(DUP_MD);
     assert.deepEqual(
@@ -25,6 +31,14 @@ describe('page markers with a duplicate "### pN"', () => {
     const byPage = bodyByPage(DUP_MD);
     assert.equal(byPage.size, 2);
     assert.match(byPage.get(1) as string, /foo alpha[\s\S]*baz charlie/);
+  });
+
+  it('accepts invisible markers and preserves duplicate page slices', () => {
+    assert.deepEqual(
+      splitByPageMarker(COMMENT_MD).map((part) => part.page),
+      [1, 2, 1]
+    );
+    assert.match(bodyByPage(COMMENT_MD).get(1) as string, /alpha[\s\S]*charlie/);
   });
 
   it('buildOcrReport emits one pageStats row per marker occurrence', () => {

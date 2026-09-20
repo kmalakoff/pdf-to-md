@@ -1,26 +1,36 @@
-// Pass 1: load the PDF and collect positioned glyphs per page, plus the
-// document-wide char-weighted font-height histogram. Heights round to 0.1pt for stable histogram keys; y is flipped so sorting ascending reads top-down.
+// Pass 1: load each PDF text run into viewport points, plus the document-wide
+// char-weighted font-height histogram. Height rounds to 0.1pt for stable histogram keys.
 import type { PDFPageProxy } from 'pdfjs-dist/legacy/build/pdf.mjs';
-import { OPS } from 'pdfjs-dist/legacy/build/pdf.mjs';
+import { OPS, Util } from 'pdfjs-dist/legacy/build/pdf.mjs';
 import { openDocument } from './pdf-open.ts';
 import type { CollectedPage, CollectResult, Glyph } from './types.ts';
 
 // HYBRID-PAGE DETECTION (README's "Design contract"): a page can carry a
 // real text layer AND a separately-painted large image with its OWN baked-in text that `page.getTextContent()` never sees.
 //
-// Signal: scan the operator list for `OPS.paintImageXObject`, whose args are
-// `[objId, width, height]` — available synchronously, `large` is >=200x200px. Masks/nested Form XObjects aren't walked (accepted gap); missing dims fall back to "op present" as the signal.
+// Image presence uses the paint operators for XObjects, inline images, and masks.
+// The large-image threshold uses `paintImageXObject` dimensions when available.
 const LARGE_IMAGE_MIN_PX = 200;
-async function hasLargeImage(page: PDFPageProxy): Promise<boolean> {
+interface PageImageSignals {
+  hasImage: boolean;
+  largeImage: boolean;
+}
+
+const IMAGE_PAINT_OPS = new Set([OPS.paintImageMaskXObject, OPS.paintImageMaskXObjectGroup, OPS.paintImageMaskXObjectRepeat, OPS.paintImageXObject, OPS.paintImageXObjectRepeat, OPS.paintInlineImageXObject, OPS.paintInlineImageXObjectGroup, OPS.paintSolidColorImageMask]);
+
+async function getPageImageSignals(page: PDFPageProxy, textChars: number): Promise<PageImageSignals> {
   const { fnArray, argsArray } = await page.getOperatorList();
+  let hasImage = false;
+  let largeImage = false;
   for (let i = 0; i < fnArray.length; i++) {
+    if (IMAGE_PAINT_OPS.has(fnArray[i])) hasImage = true;
     if (fnArray[i] !== OPS.paintImageXObject) continue;
     const [, w, h] = argsArray[i];
     if (typeof w === 'number' && typeof h === 'number') {
-      if (w >= LARGE_IMAGE_MIN_PX && h >= LARGE_IMAGE_MIN_PX) return true;
-    } else return true; // dims unavailable: coarser "op present" signal
+      if (w >= LARGE_IMAGE_MIN_PX && h >= LARGE_IMAGE_MIN_PX) largeImage = true;
+    } else largeImage = true; // dims unavailable: coarser "op present" signal
   }
-  return false;
+  return { hasImage, largeImage: textChars > 80 && largeImage };
 }
 
 // { first, last }: 1-based, inclusive page range (the CLI's --pages).
@@ -46,31 +56,52 @@ export async function collect(src: string, { first, last }: { first?: number; la
     const page = await doc.getPage(p);
     const { items } = await page.getTextContent();
     const vp = page.getViewport({ scale: 1 });
+    const viewportScale = Math.hypot(vp.transform[0], vp.transform[1]);
     const glyphs: Glyph[] = [];
     let textChars = 0;
     for (const it of items) {
       if (!('str' in it) || typeof it.str !== 'string') continue;
       textChars += it.str.length;
       if (!it.str.trim()) continue;
-      const h = Math.round(Math.abs(it.transform[3]) * 10) / 10;
+      const transform = Util.transform(vp.transform, it.transform);
+      const baselineLength = Math.hypot(transform[0], transform[1]);
+      const w = Math.abs(it.width) * viewportScale;
+      const h = Math.round(Math.hypot(transform[2], transform[3]) * 10) / 10;
+      const baselineX = baselineLength > 0 ? (transform[0] / baselineLength) * w : w;
+      const baselineY = baselineLength > 0 ? (transform[1] / baselineLength) * w : 0;
+      const corners = [
+        [transform[4], transform[5]],
+        [transform[4] + baselineX, transform[5] + baselineY],
+        [transform[4] + baselineX + transform[2], transform[5] + baselineY + transform[3]],
+        [transform[4] + transform[2], transform[5] + transform[3]],
+      ];
+      const boundsX = corners.map(([x]) => x);
+      const boundsY = corners.map(([, y]) => y);
       glyphs.push({
         s: it.str,
-        x: it.transform[4],
-        y: vp.height - it.transform[5],
-        w: it.width,
+        x: transform[4],
+        y: transform[5],
+        w,
         h,
+        bounds: {
+          x: Math.min(...boundsX),
+          y: Math.min(...boundsY),
+          w: Math.max(...boundsX) - Math.min(...boundsX),
+          h: Math.max(...boundsY) - Math.min(...boundsY),
+        },
       });
       heightChars.set(h, (heightChars.get(h) || 0) + it.str.length);
     }
     // "text layer used" for hybrid-page purposes (page text > 80 chars) — a
     // page with only a couple of stray scraps isn't "using" the text layer even if it also carries a large image.
-    const largeImage = textChars > 80 && (await hasLargeImage(page));
+    const { hasImage, largeImage } = await getPageImageSignals(page, textChars);
     pages.push({
       page: p,
       glyphs,
       width: vp.width,
       height: vp.height,
       textChars,
+      hasImage,
       largeImage,
     });
   }

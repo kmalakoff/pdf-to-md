@@ -9,7 +9,7 @@ export const AUTO_OCR_CHARS_PER_PAGE = 20;
 
 /** A manually-bumped integer, deliberately not the npm package version —
  * bump whenever a change can alter output for identical input. See `CHANGELOG.md` for history. */
-export const OUTPUT_VERSION = 1;
+export const OUTPUT_VERSION = 2;
 
 // A body paragraph line may end in sentence/clause punctuation, a closing
 // quote/bracket, an ellipsis, or a digit (chart/label lines like "1/3" legitimately end in a number).
@@ -91,7 +91,7 @@ function danglingCounts(body: string): DanglingCounts {
 
 // One page's own measured stats, derivable from its body text alone —
 // shared by `pageStats` and any future caller that already has a page's body text in hand.
-function measurePage(body: string): Omit<PageStatsRow, 'page' | 'largeImages' | 'lowConfidenceWords' | 'lowConfidenceSample'> {
+function measurePage(body: string): Omit<PageStatsRow, 'page' | 'path' | 'largeImages' | 'lowConfidenceWords' | 'lowConfidenceSample'> {
   const heads = body.match(/^#{1,6}\s*(.+)$/gm) || [];
   const dangling = danglingCounts(body);
   return {
@@ -111,11 +111,11 @@ function measurePage(body: string): Omit<PageStatsRow, 'page' | 'largeImages' | 
 //
 // `hybridPages` (text path only) marks a row `largeImages: true` when that
 // page used its text layer but also carries a large embedded image; omitted entirely on the OCR path, which has no equivalent signal.
-function pageStats(md: string, hybridPages?: number[]): PageStatsRow[] {
+function pageStats(md: string, path: 'text' | 'ocr', hybridPages?: number[], pagePaths?: Map<number, 'text' | 'ocr'>): PageStatsRow[] {
   const rows: PageStatsRow[] = [];
   for (const { page, body } of splitByPageMarker(md)) {
-    const row: PageStatsRow = { page, ...measurePage(body) };
-    if (hybridPages) row.largeImages = hybridPages.includes(page);
+    const row: PageStatsRow = { page, path: pagePaths?.get(page) ?? path, ...measurePage(body) };
+    if (hybridPages && row.path === 'text') row.largeImages = hybridPages.includes(page);
     rows.push(row);
   }
   return rows;
@@ -124,7 +124,7 @@ function pageStats(md: string, hybridPages?: number[]): PageStatsRow[] {
 export function buildReport({ numPages, md, statsMd, stats, bodyH, headingSizes, hybridPages = [] }: BuildReportInput): Report {
   const heads = (md.match(/^#{1,6}\s*(.+)$/gm) || []).filter((h) => !isPageMarkerLine(h)); // page markers are provenance, not structure
   const perPage = Math.round(md.length / numPages);
-  const perPageStats = pageStats(statsMd, hybridPages);
+  const perPageStats = pageStats(statsMd, 'text', hybridPages);
   return {
     outputVersion: OUTPUT_VERSION,
     path: 'text',
@@ -154,11 +154,11 @@ export function buildReport({ numPages, md, statsMd, stats, bodyH, headingSizes,
 
 // QA report for the OCR path: measured from the emitted markdown text.
 // `fallback` records that the text layer was tried first and found empty.
-export function buildOcrReport({ md, fallback, words = [] }: BuildOcrReportInput): Report {
+export function buildOcrReport({ md, fallback, words = [], pagePaths, hybridPages }: BuildOcrReportInput): Report {
   const numPages = countPageMarkers(md);
   const heads = (md.match(/^#{1,6}\s*(.+)$/gm) || []).filter((h) => !isPageMarkerLine(h));
   const perPage = numPages ? Math.round(md.length / numPages) : 0;
-  const perPageStats = pageStats(md);
+  const perPageStats = pageStats(md, 'ocr', hybridPages, pagePaths);
   // Attach the low-confidence detector's per-page results after the fact:
   // pageStats() has no confidence data (it reads markdown text only), so join it in here by page number.
   const lowConf = lowConfidenceByPage(words);
@@ -169,9 +169,10 @@ export function buildOcrReport({ md, fallback, words = [] }: BuildOcrReportInput
       if (entry.sample.length) row.lowConfidenceSample = entry.sample;
     }
   }
+  const mixed = pagePaths !== undefined && [...pagePaths.values()].some((path) => path === 'text');
   return {
     outputVersion: OUTPUT_VERSION,
-    path: 'ocr',
+    path: mixed ? 'mixed' : 'ocr',
     pages: numPages,
     ocrFallback: !!fallback,
     chars: md.length,

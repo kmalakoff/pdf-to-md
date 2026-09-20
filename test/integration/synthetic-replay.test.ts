@@ -32,7 +32,7 @@ describe('synthetic replay gate: frozen word dump -> exact frozen markdown', () 
   it('severity-1: MISSING=0 via the shipped auditor against the frozen pair', () => {
     const result = auditWords(WORDS, EXPECTED_MD);
     assert.equal(result.missing, 0, `expected MISSING=0, got: ${result.summaryLine}`);
-    assert.equal(result.words, 150, 'the frozen dump should parse to exactly 150 words');
+    assert.equal(result.words, 152, 'the frozen dump should tokenize to exactly 152 words');
   });
 
   it('the report reflects every covered behavior (floats, review, low-confidence, headings)', () => {

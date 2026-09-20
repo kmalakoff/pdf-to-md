@@ -1,102 +1,75 @@
 ---
 name: pdf-to-md
-description: "Convert a PDF to markdown with pdf-to-md and drive its QA loop to a lossless result: read the --json report's pageStats to find suspect pages, render pages to PNG as ground truth, re-extract targeted page ranges with tuning flags, and run the severity-1 word-loss audit before trusting the output. Use when converting a PDF to markdown with pdf-to-md, when a pdf-to-md conversion looks wrong (garbled reading order, misplaced text, misread words, a suspicious page), or when asked to verify a pdf-to-md conversion is lossless."
+description: "Convert PDFs to Markdown with pdf-to-md, investigate missing or misordered text, and verify conversions against source pages and extraction evidence. Use for conversion, targeted re-extraction, or quality checks of pdf-to-md output."
 ---
 
 # pdf-to-md
 
-pdf-to-md converts PDFs to markdown: text layer via pdf.js, OCR (tesseract.js) fallback for
-image-only or sparse pages. Its contract: recognized text is never silently dropped,
-unrecoverable structure is marked (`> [review: ...]`) rather than guessed, and every claim the
-output makes is mechanically checkable. This skill is the QA loop that contract is built for —
-convert, read the report, verify against the real page, re-extract, audit.
+pdf-to-md reads embedded text and uses local OCR where needed. A preservation audit checks extracted text against Markdown. Recognition accuracy, reading order, tables and diagrams require comparison with rendered source pages.
 
-## 1. Convert
+## Convert with evidence
 
-```
-pdf-to-md file.pdf --json
+```sh
+pdf-to-md file.pdf out.md --json --page-markers --debug-words=words.jsonl
 ```
 
-Auto-detects the OCR need (falls back when the text layer is too sparse) and prints the QA report
-alongside the markdown. `--ocr` forces the OCR path; `--no-ocr` suppresses the fallback and keeps
-the sparse text-layer output. `--pages N[-M]` limits to a page range; `--stdout` writes markdown
-to stdout instead of a file.
+Page markers connect the output to its source pages. `--debug-words` captures text-layer items or recognized OCR words before layout reconstruction. Text items can contain multiple words. Parse the dump as JSON Lines; key order is not fixed.
 
-## 2. Read the QA report
+`--ocr` forces recognition and `--no-ocr` retains the text path. `--pages N[-M]` selects source pages. A mixed document can use different extraction paths per page. Keep the input identity, tool version, effective options, report and dump with the run's working artifacts so later corrections use matching evidence.
 
-`report.pageStats` (one row per page) flags pages worth checking by hand:
+## Find pages to inspect
 
-- `danglingLong` — a paragraph broke off without terminal punctuation before the next one starts:
-  a likely invisible sentence split the geometry got wrong.
-- `reviewBlocks` — count of `> [review: reason]` blocks: the geometry declined to guess an order
-  and labeled the block instead of guessing. Always worth reading.
-- `lowConfidenceWords` / `lowConfidenceSample` — words the OCR engine itself scored below its
-  confidence threshold; the sample is the actual suspect tokens, worst first. Probable misreads.
-- `junkHeadings` — lines promoted to headings by a font-size heuristic that are probably not
-  headings.
-- `largeImages` (text path only) — a real text layer plus a large embedded image: text baked into
-  the image may duplicate or replace what the text layer extracted. Don't assume the text layer
-  is complete — compare it against `--pages N --ocr` on that page.
+Read `report.pageStats` and warnings:
 
-A page with none of these flags isn't proof it's correct, only that these particular detectors
-found nothing — pair with step 3 for anything the report doesn't cover.
+- `danglingLong` identifies prose that may have broken at the wrong place.
+- `reviewBlocks` counts OCR blocks whose structure could not be recovered. The text path does not provide this detector; zero is not a layout guarantee.
+- `lowConfidenceWords` and `lowConfidenceSample` identify uncertain OCR tokens. Missing confidence data is not a high-confidence result.
+- `junkHeadings` identifies possible font-size classification errors.
+- `largeImages` on text pages identifies images that may contain additional text. Compare a targeted OCR pass before replacing usable embedded text.
 
-## 3. Ground truth: render the page
+Also inspect sparse or empty pages and any layout the detectors do not cover. An unflagged page can still have incorrect columns, character mappings, tables or missing visual material.
 
-```
+## Compare against the page
+
+```sh
 pdf-to-md render file.pdf N
 ```
 
-Renders page N to PNG at 288dpi — the same resolution the OCR path reads at (override with
-`--dpi`) — into the current directory (or `--out DIR`). View the PNG next to the flagged markdown;
-this is the only real ground truth, everything in the report is inference on top of it.
+The default render is 288 DPI; use `--out DIR` for its destination. Compare the rendered page with the output, including item numbers, captions, symbols and reading order. Word presence alone does not validate these relationships.
 
-## 4. Targeted re-extraction
+For an OCR comparison or tuning experiment:
 
-Re-run just the flagged pages with an adjusted knob:
-
-```
-pdf-to-md file.pdf --pages 27-31 --stdout --dpi 400
+```sh
+pdf-to-md file.pdf page-N.md --pages N --ocr --dpi 400 --debug-words=page-N.words.jsonl
 ```
 
-Tuning flags (`--float-max-words`, `--para-gap`, `--heading-scale`, and the rest) are measured
-defaults — read README's tuning table for what each one controls and its default rather than
-guessing a value. Raising `--dpi` fixes chart/label corruption but can make scattered numerals on
-the same page worse, not better — try it on the flagged page only and compare, don't assume higher
-is strictly better.
+OCR can recover image text and also damage correct embedded text. Higher DPI can improve small labels and worsen ordinary prose. Compare the result before accepting it. Read the package's `QUALITY.md` for tuning controls; their effects apply to OCR geometry.
 
-## 5. Severity-1 audit
+If a page needs manual repair, retain its source dump and page number. An image can preserve a diagram visually but does not recover editable text. Record unresolved character mappings or flattened tables alongside the affected content.
 
-Before trusting a conversion, run the audit — the only mechanically-checkable proof that no
-recognized word was silently dropped:
+## Audit the final Markdown
 
-```
-pdf-to-md file.pdf out.md --debug-words=words.jsonl
+```sh
 pdf-to-md audit words.jsonl out.md
 ```
 
-Exits 1 if any word from the dump is missing from the markdown; `MISSING=0` in the printed summary
-line is the pass signal. `--debug-words` output is JSON Lines with no guaranteed key order —
-parse each line as JSON, never grep the file for text.
+A successful audit with `MISSING=0` means the supplied extracted text was accounted for under the auditor's matching rules. Empty or malformed evidence is an error. It does not prove that the dump captured every visible word or that the result is an accurate transcription.
 
-## 6. Machine-parseable markers
+The auditor accepts `### pN` headings and `<!-- pN -->` comments. Audit the final file after edits and marker changes. Use the matching extraction dump for any pages replaced with a different extraction. Keep editorial additions separate while checking preservation, because added text can satisfy a missing occurrence.
 
-Two regex-matchable line prefixes carry content the geometry parked rather than lost:
+Report preservation results, visual/structural checks, and unresolved issues separately. Avoid a blanket "lossless" claim based on a word audit.
 
+## Programmatic repair
+
+`--format raw` returns an `Analysis` with per-page source items, blocks and a report. Text pages contain PDF text runs; OCR pages contain recognized words. Boxes use page-normalized coordinates, origin bottom-left, y increasing upward. Block `wordIndexes` link to the page's source list. Preserve that evidence when reordering blocks; rebuilding the source list from corrected output would make the audit circular.
+
+OCR uncertainty markers remain visible in Markdown:
+
+```text
+> [floats] ...
+> [review: reason] ...
 ```
-^> \[(floats|review: [^\]]+)\] (.*)$
-```
 
-`> [floats]` is a fragment (short line, margin text, etc.) set aside as decoration; `> [review:
-reason]` is a block the geometry couldn't order, with the reason inline. Both are visible in the
-markdown and safe to post-process (move, drop, re-attach) once matched.
+Moving or deleting these blocks can remove real content. Check their source pages before changing them.
 
-For programmatic convergence instead of eyeballing, `--format raw` returns the full `Analysis` as
-JSON: every word and block with its coordinates (normalized `[0,1]`, origin bottom-left, y up)
-plus the same `report` `--json` prints. Feed that into your own re-ordering or merge logic instead
-of re-parsing the markdown.
-
-## Reference
-
-Full flag list: `pdf-to-md --help`. Tuning table and design contract: the package README. Every
-exported function and option is documented at its declaration, visible in editor hover.
+PDF compression is a separate operation. If requested, retain an identifiable original and verify text and visual material independently before replacing it. Lossy image compression can affect subsequent OCR and diagram checks even when extracted text stays identical.

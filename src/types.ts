@@ -1,14 +1,25 @@
 // Shared shapes threaded through the collect -> lines -> markdown -> report
 // pipeline; kept in one place since every downstream stage uses at least one.
 
+/** Viewport-point AABB for a source text run's transformed advance by
+ * font-height box. This is a run box, not fabricated per-token geometry. */
+export interface GlyphBounds {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+}
+
 // A positioned glyph run from the PDF's text layer: `s` may be more than one
-// character; `y` is flipped so ascending sorts top-down; `h` is font height rounded to 0.1pt.
+// character. x/y are the transformed baseline origin in viewport points;
+// w/h are its advance and font height, and bounds is their viewport AABB.
 export interface Glyph {
   s: string;
   x: number;
   y: number;
   w: number;
   h: number;
+  bounds: GlyphBounds;
 }
 
 // One page's worth of collected glyphs plus the geometry collect.ts needs
@@ -19,6 +30,8 @@ export interface CollectedPage {
   width: number;
   height: number;
   textChars: number;
+  /** any painted image operator, independent of text-layer density */
+  hasImage: boolean;
   largeImage: boolean;
 }
 
@@ -38,6 +51,9 @@ export interface Line {
   y: number;
   h: number;
   col: number;
+  /** indexes of the collected PDF text runs that produced this line, in
+   * display order. OCR has its own source-word linkage. */
+  wordIndexes: number[];
 }
 
 // One page's lines, as src/extract.ts assembles them for buildMarkdown.
@@ -67,12 +83,17 @@ export interface MarkdownResult {
   stats: MarkdownStats;
   bodyH: number;
   headingSizes: number[];
+  /** The structural blocks that produced `md`, grouped by source page.
+   * Markers are rendering provenance and are deliberately not blocks. */
+  pages: MarkdownPage[];
 }
 
 /** One row of the per-page QA breakdown ("### pN" blocks) — used to decide
  * which pages are worth rendering and re-checking (README's "Design contract"). */
 export interface PageStatsRow {
   page: number;
+  /** producer retained for this page, including in a mixed result */
+  path: 'text' | 'ocr';
   chars: number;
   headings: number;
   junkHeadings: number;
@@ -119,6 +140,10 @@ export interface WordConfidenceInput {
 export interface BuildOcrReportInput {
   md: string;
   fallback?: boolean;
+  /** Per-page producer map for a mixed result. Omit for OCR-only output. */
+  pagePaths?: Map<number, 'text' | 'ocr'>;
+  /** text pages retaining a large embedded image, for mixed per-page QA */
+  hybridPages?: number[];
   /** every recognized word, for `report.ts`'s low-confidence detector.
    * Defaults to [] (a pre-confidence --words-json replay), reporting the detector absent, never wrong. */
   words?: WordConfidenceInput[];
@@ -130,7 +155,7 @@ export interface Report {
   /** manually-bumped integer (not the npm package version) — see
    * `report.ts`'s OUTPUT_VERSION for the bump rule; present on every Report so a frozen baseline's staleness is self-announcing. */
   outputVersion: number;
-  path: 'text' | 'ocr';
+  path: 'text' | 'ocr' | 'mixed';
   pages: number;
   chars: number;
   charsPerPage: number;
@@ -181,14 +206,21 @@ export interface AnalysisBlock {
   /** Heading level (integer 1-6); REQUIRED when `type` is `'heading'`,
    * FORBIDDEN otherwise — toMarkdown()/toText() validate this fail-fast (throws PdfToMdError/'ANALYSIS_INPUT'), never silently ignored. */
   level?: number;
+  /** adjacent Markdown line with no blank separator, used for list items */
+  tight?: boolean;
   wordIndexes: number[];
 }
 
 /** One page's flat words plus its structural blocks. */
 export interface AnalysisPage {
   page: number;
-  /** Flat, page-relative word list; `AnalysisBlock.wordIndexes` indexes into it. `box` is always normalized [0,1], origin bottom-left, y up, regardless of path.
-   * OCR-path is genuinely per-word; TEXT-path is per visual LINE (`box.w` always 0, `box.y` the line's baseline) — coarser but honest, not faked. */
+  /** producer retained for this page; `Analysis.report.path` is `'mixed'`
+   * when the document has more than one page producer. */
+  path: 'text' | 'ocr';
+  /** Flat, page-relative source items; `AnalysisBlock.wordIndexes` indexes
+   * into it. OCR boxes are normalized [0,1]. Text-run boxes are page
+   * fractions and may extend outside that range when the PDF run extends past
+   * the viewport. Both use a bottom-left origin with y up. */
   words: AnalysisWord[];
   blocks: AnalysisBlock[];
 }
@@ -202,4 +234,12 @@ export interface Analysis {
    * measured off real markdown (OCR: the shared core's output; TEXT: buildMarkdown's reflowed output, not this coarser IR) — never stale relative to the IR. */
   report: Report;
   pages: AnalysisPage[];
+}
+
+/** One page's blocks from the text Markdown builder. This is internal
+ * rendering evidence, but it is declared here because the shared text
+ * analysis consumes it without parsing Markdown back into structure. */
+export interface MarkdownPage {
+  page: number;
+  blocks: AnalysisBlock[];
 }

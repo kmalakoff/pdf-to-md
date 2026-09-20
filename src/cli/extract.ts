@@ -5,7 +5,7 @@ import path from 'node:path';
 import { parseArgs } from 'node:util';
 import { analyze } from '../analyze.ts';
 import type { OcrWordInput } from '../extract.ts';
-import { extractOcr, needsOcrFallback, ocrFallbackNotice, pdfToMarkdown } from '../extract.ts';
+import { analyzePdfAuto, extractOcr, pdfToMarkdown } from '../extract.ts';
 import type { Tuning } from '../geometry.ts';
 import { toText } from '../render-analysis.ts';
 import type { Analysis, Report } from '../types.ts';
@@ -163,7 +163,7 @@ const extract: Command = async (ctx) => {
       }
     : undefined;
 
-  const common = { pages, onWarning };
+  const common = { pages, onWarning, onWords };
   const ocrCommon = {
     ...common,
     tuning,
@@ -195,21 +195,20 @@ const extract: Command = async (ctx) => {
     }
     content = markdown;
   } else {
-    // raw/txt: both render from an Analysis — raw IS the Analysis as JSON;
-    // txt is toText(analysis). Mirrors pdfToMarkdown's own auto-OCR fallback decision so a different --format doesn't silently pick a different path.
+    // raw/txt render the same routed Analysis as the Markdown API, so a
+    // format switch cannot discard a sparse image page or change audit input.
     let analysis: Analysis;
     if (words !== undefined) {
       analysis = await analyze({ words }, { ...ocrCommon, path: 'ocr' });
-    } else if (values.ocr) {
-      analysis = await analyze(src, { ...ocrCommon, path: 'ocr' });
     } else {
-      const text = await analyze(src, { ...common, path: 'text', pageMarkers: values['page-markers'] as boolean });
-      if (needsOcrFallback(text.report.charsPerPage) && !values['no-ocr']) {
-        onWarning(ocrFallbackNotice(text.report.charsPerPage));
-        analysis = await analyze(src, { ...ocrCommon, path: 'ocr', fallback: true });
-      } else {
-        analysis = text;
-      }
+      analysis = (
+        await analyzePdfAuto(src, {
+          ...ocrCommon,
+          ocr: values.ocr as boolean,
+          noOcr: values['no-ocr'] as boolean,
+          pageMarkers: values['page-markers'] as boolean,
+        })
+      ).analysis;
     }
     report = analysis.report;
     content = format === 'raw' ? JSON.stringify(analysis, null, 1) : toText(analysis);
