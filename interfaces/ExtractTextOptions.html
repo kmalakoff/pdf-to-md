@@ -13,7 +13,7 @@
 <section class="tsd-panel tsd-comment">
 <div class="tsd-comment tsd-typography"><p>Options for <a href="../functions/extractText.html" class="tsd-kind-function">extractText</a>.</p>
 </div></section>
-<div class="tsd-signature"><span class="tsd-signature-keyword">interface</span> <span class="tsd-kind-interface">ExtractTextOptions</span> <span class="tsd-signature-symbol">{</span><br/>    <a class="tsd-kind-property" href="#onwarning">onWarning</a><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-symbol">(</span><span class="tsd-kind-parameter">message</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">)</span> <span class="tsd-signature-symbol">=&gt;</span> <span class="tsd-signature-type">void</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#pagemarkers">pageMarkers</a><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">boolean</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#pages">pages</a><span class="tsd-signature-symbol">?:</span> <a href="PageSelection.html" class="tsd-signature-type tsd-kind-interface">PageSelection</a><span class="tsd-signature-symbol">;</span><br/><span class="tsd-signature-symbol">}</span></div>
+<div class="tsd-signature"><span class="tsd-signature-keyword">interface</span> <span class="tsd-kind-interface">ExtractTextOptions</span> <span class="tsd-signature-symbol">{</span><br/>    <a class="tsd-kind-property" href="#onwarning">onWarning</a><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-symbol">(</span><span class="tsd-kind-parameter">message</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">)</span> <span class="tsd-signature-symbol">=&gt;</span> <span class="tsd-signature-type">void</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#onwords">onWords</a><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-symbol">(</span><span class="tsd-kind-parameter">words</span><span class="tsd-signature-symbol">:</span> <a href="PageWord.html" class="tsd-signature-type tsd-kind-interface">PageWord</a><span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol">)</span> <span class="tsd-signature-symbol">=&gt;</span> <span class="tsd-signature-type">void</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#pagemarkers">pageMarkers</a><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">boolean</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#pages">pages</a><span class="tsd-signature-symbol">?:</span> <a href="PageSelection.html" class="tsd-signature-type tsd-kind-interface">PageSelection</a><span class="tsd-signature-symbol">;</span><br/><span class="tsd-signature-symbol">}</span></div>
 <section class="tsd-panel tsd-hierarchy" data-refl="59">
 <h4>Hierarchy (<a href="../hierarchy.html#ExtractTextOptions">View Summary</a>)</h4>
 <ul class="tsd-hierarchy">
@@ -23,7 +23,7 @@
 <ul class="tsd-hierarchy">
 <li class="tsd-hierarchy-item"><a href="PdfToMarkdownOptions.html" class="tsd-signature-type tsd-kind-interface">PdfToMarkdownOptions</a></li></ul></li></ul></li></ul></section><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/kmalakoff/pdf-to-md/blob/9db5d32be3ddfe84f812c26cbef43474351900f1/src/extract.ts#L55">extract.ts:55</a></li></ul></aside>
+<li>Defined in <a href="https://github.com/kmalakoff/pdf-to-md/blob/af2f46e59905d3c85defc4677e1bfdf98e665943/src/extract.ts#L54">extract.ts:54</a></li></ul></aside>
 <section class="tsd-panel-group tsd-index-group">
 <section class="tsd-panel tsd-index-panel">
 <details class="tsd-index-content tsd-accordion" open><summary class="tsd-accordion-summary tsd-index-summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>
@@ -32,6 +32,7 @@
 <section class="tsd-index-section">
 <h3 class="tsd-index-heading tsd-anchor-link" id="properties">Properties<a href="#properties" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-index-list"><a href="#onwarning" class="tsd-index-link tsd-is-inherited"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>on<wbr/>Warning?</span></a>
+<a href="#onwords" class="tsd-index-link"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>on<wbr/>Words?</span></a>
 <a href="#pagemarkers" class="tsd-index-link"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>page<wbr/>Markers?</span></a>
 <a href="#pages" class="tsd-index-link tsd-is-inherited"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>pages?</span></a>
 </div></section></div></details></section></section>
@@ -46,7 +47,15 @@
 </div><aside class="tsd-sources">
 <p>Inherited from CommonOptions.onWarning</p>
 <ul>
-<li>Defined in <a href="https://github.com/kmalakoff/pdf-to-md/blob/9db5d32be3ddfe84f812c26cbef43474351900f1/src/extract.ts#L51">extract.ts:51</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/kmalakoff/pdf-to-md/blob/af2f46e59905d3c85defc4677e1bfdf98e665943/src/extract.ts#L50">extract.ts:50</a></li></ul></aside></section>
+<section class="tsd-panel tsd-member">
+<h3 class="tsd-anchor-link" id="onwords"><code class="tsd-tag">Optional</code><span>on<wbr/>Words</span><a href="#onwords" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<div class="tsd-signature"><span class="tsd-kind-property">onWords</span><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-symbol">(</span><span class="tsd-kind-parameter">words</span><span class="tsd-signature-symbol">:</span> <a href="PageWord.html" class="tsd-signature-type tsd-kind-interface">PageWord</a><span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol">)</span> <span class="tsd-signature-symbol">=&gt;</span> <span class="tsd-signature-type">void</span></div>
+<div class="tsd-comment tsd-typography"><p>source PDF text runs entering layout, delivered once for the selected
+final result. Runs retain measured bounds and are not fabricated words.</p>
+</div><aside class="tsd-sources">
+<ul>
+<li>Defined in <a href="https://github.com/kmalakoff/pdf-to-md/blob/af2f46e59905d3c85defc4677e1bfdf98e665943/src/extract.ts#L60">extract.ts:60</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="pagemarkers"><code class="tsd-tag">Optional</code><span>page<wbr/>Markers</span><a href="#pagemarkers" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">pageMarkers</span><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">boolean</span></div>
@@ -54,7 +63,7 @@
 only — <code>report.pageStats</code> is always populated regardless)</p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/kmalakoff/pdf-to-md/blob/9db5d32be3ddfe84f812c26cbef43474351900f1/src/extract.ts#L58">extract.ts:58</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/kmalakoff/pdf-to-md/blob/af2f46e59905d3c85defc4677e1bfdf98e665943/src/extract.ts#L57">extract.ts:57</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member tsd-is-inherited">
 <h3 class="tsd-anchor-link" id="pages"><code class="tsd-tag">Optional</code><span>pages</span><a href="#pages" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">pages</span><span class="tsd-signature-symbol">?:</span> <a href="PageSelection.html" class="tsd-signature-type tsd-kind-interface">PageSelection</a></div>
@@ -63,7 +72,7 @@ whole document</p>
 </div><aside class="tsd-sources">
 <p>Inherited from CommonOptions.pages</p>
 <ul>
-<li>Defined in <a href="https://github.com/kmalakoff/pdf-to-md/blob/9db5d32be3ddfe84f812c26cbef43474351900f1/src/extract.ts#L48">extract.ts:48</a></li></ul></aside></section></section></details></div>
+<li>Defined in <a href="https://github.com/kmalakoff/pdf-to-md/blob/af2f46e59905d3c85defc4677e1bfdf98e665943/src/extract.ts#L47">extract.ts:47</a></li></ul></aside></section></section></details></div>
 <div class="col-sidebar">
 <div class="page-menu">
 <div class="tsd-navigation settings">
@@ -79,7 +88,7 @@ whole document</p>
 <h3>On This Page</h3></summary>
 <div class="tsd-accordion-details">
 <details open class="tsd-accordion tsd-page-navigation-section"><summary class="tsd-accordion-summary" data-key="section-Properties"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>Properties</summary>
-<div><a href="#onwarning" class="tsd-is-inherited"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>on<wbr/>Warning</span></a><a href="#pagemarkers"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>page<wbr/>Markers</span></a><a href="#pages" class="tsd-is-inherited"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>pages</span></a></div></details></div></details></div>
+<div><a href="#onwarning" class="tsd-is-inherited"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>on<wbr/>Warning</span></a><a href="#onwords"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>on<wbr/>Words</span></a><a href="#pagemarkers"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>page<wbr/>Markers</span></a><a href="#pages" class="tsd-is-inherited"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>pages</span></a></div></details></div></details></div>
 <div class="site-menu">
 <nav class="tsd-navigation"><a href="../modules.html">@effortlessmotion/pdf-to-md</a>
 <ul class="tsd-small-nested-navigation" id="tsd-nav-container">

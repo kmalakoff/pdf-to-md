@@ -15,8 +15,8 @@
 <li class="">
 <div class="tsd-signature tsd-anchor-link" id="pdftomarkdown"><span class="tsd-kind-call-signature">pdfToMarkdown</span><span class="tsd-signature-symbol">(</span><br/>    <span class="tsd-kind-parameter">pdfPath</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">,</span><br/>    <span class="tsd-kind-parameter">opts</span><span class="tsd-signature-symbol">?:</span> <a href="../interfaces/PdfToMarkdownOptions.html" class="tsd-signature-type tsd-kind-interface">PdfToMarkdownOptions</a><span class="tsd-signature-symbol">,</span><br/><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><a href="../interfaces/ExtractResult.html" class="tsd-signature-type tsd-kind-interface">ExtractResult</a><span class="tsd-signature-symbol">&gt;</span><a href="#pdftomarkdown" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></div>
 <div class="tsd-description">
-<div class="tsd-comment tsd-typography"><p>The headline API: extract a PDF to markdown, text layer first, falling
-back to OCR when the text layer is empty enough the pages are certainly images of text (&lt; <code>AUTO_OCR_CHARS_PER_PAGE</code> chars/page) — the same decision the CLI makes.</p>
+<div class="tsd-comment tsd-typography"><p>Extract each page from embedded text, using OCR only when the page has
+image content and fewer than <code>AUTO_OCR_CHARS_PER_PAGE</code> text characters.</p>
 </div>
 <div class="tsd-parameters">
 <h4 class="tsd-parameters-title">Parameters</h4>
@@ -29,7 +29,7 @@ back to OCR when the text layer is empty enough the pages are certainly images o
 </div></li></ul></div>
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><a href="../interfaces/ExtractResult.html" class="tsd-signature-type tsd-kind-interface">ExtractResult</a><span class="tsd-signature-symbol">&gt;</span></h4><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/kmalakoff/pdf-to-md/blob/9db5d32be3ddfe84f812c26cbef43474351900f1/src/extract.ts#L187">extract.ts:187</a></li></ul></aside></div></li></ul></section></div>
+<li>Defined in <a href="https://github.com/kmalakoff/pdf-to-md/blob/af2f46e59905d3c85defc4677e1bfdf98e665943/src/extract.ts#L246">extract.ts:246</a></li></ul></aside></div></li></ul></section></div>
 <div class="col-sidebar">
 <div class="page-menu">
 <div class="tsd-navigation settings">

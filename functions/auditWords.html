@@ -15,8 +15,9 @@
 <li class="">
 <div class="tsd-signature tsd-anchor-link" id="auditwords"><span class="tsd-kind-call-signature">auditWords</span><span class="tsd-signature-symbol">(</span><span class="tsd-kind-parameter">wordsPath</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">,</span> <span class="tsd-kind-parameter">mdPath</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">:</span> <a href="../interfaces/AuditResult.html" class="tsd-signature-type tsd-kind-interface">AuditResult</a><a href="#auditwords" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></div>
 <div class="tsd-description">
-<div class="tsd-comment tsd-typography"><p>Audit a --debug-words dump against a markdown file: every recognized word
-must land somewhere in its page's markdown. <code>result.missing === 0</code> is the pass/fail signal.</p>
+<div class="tsd-comment tsd-typography"><p>Audit a --debug-words dump against a Markdown file. Every recognized word
+must land on its page. Invalid evidence or absent page provenance throws a
+PdfToMdError with code <code>AUDIT_INPUT</code>.</p>
 </div>
 <div class="tsd-parameters">
 <h4 class="tsd-parameters-title">Parameters</h4>
@@ -29,7 +30,7 @@ must land somewhere in its page's markdown. <code>result.missing === 0</code> is
 </div></li></ul></div>
 <h4 class="tsd-returns-title">Returns <a href="../interfaces/AuditResult.html" class="tsd-signature-type tsd-kind-interface">AuditResult</a></h4><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/kmalakoff/pdf-to-md/blob/9db5d32be3ddfe84f812c26cbef43474351900f1/src/audit.ts#L61">audit.ts:61</a></li></ul></aside></div></li></ul></section></div>
+<li>Defined in <a href="https://github.com/kmalakoff/pdf-to-md/blob/af2f46e59905d3c85defc4677e1bfdf98e665943/src/audit.ts#L137">audit.ts:137</a></li></ul></aside></div></li></ul></section></div>
 <div class="col-sidebar">
 <div class="page-menu">
 <div class="tsd-navigation settings">

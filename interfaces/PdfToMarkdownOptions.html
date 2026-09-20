@@ -14,7 +14,7 @@
 <div class="tsd-comment tsd-typography"><p>Options for <a href="../functions/pdfToMarkdown.html" class="tsd-kind-function">pdfToMarkdown</a>.</p>
 </div></section>
 <div class="tsd-signature"><span class="tsd-signature-keyword">interface</span> <span class="tsd-kind-interface">PdfToMarkdownOptions</span> <span class="tsd-signature-symbol">{</span><br/>    <a class="tsd-kind-property" href="#dpi">dpi</a><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#noocr">noOcr</a><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">boolean</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#ocr">ocr</a><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">boolean</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#onprogress">onProgress</a><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-symbol">(</span><span class="tsd-kind-parameter">e</span><span class="tsd-signature-symbol">:</span> <a href="../types/OcrProgressEvent.html" class="tsd-signature-type tsd-kind-type-alias">OcrProgressEvent</a><span class="tsd-signature-symbol">)</span> <span class="tsd-signature-symbol">=&gt;</span> <span class="tsd-signature-type">void</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#onwarning">onWarning</a><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-symbol">(</span><span class="tsd-kind-parameter">message</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">)</span> <span class="tsd-signature-symbol">=&gt;</span> <span class="tsd-signature-type">void</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#onwords">onWords</a><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-symbol">(</span><span class="tsd-kind-parameter">words</span><span class="tsd-signature-symbol">:</span> <a href="PageWord.html" class="tsd-signature-type tsd-kind-interface">PageWord</a><span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol">)</span> <span class="tsd-signature-symbol">=&gt;</span> <span class="tsd-signature-type">void</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#pagemarkers">pageMarkers</a><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">boolean</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#pages">pages</a><span class="tsd-signature-symbol">?:</span> <a href="PageSelection.html" class="tsd-signature-type tsd-kind-interface">PageSelection</a><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#tuning">tuning</a><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">Partial</span><span class="tsd-signature-symbol">&lt;</span><a href="Tuning.html" class="tsd-signature-type tsd-kind-interface">Tuning</a><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">;</span><br/><span class="tsd-signature-symbol">}</span></div>
-<section class="tsd-panel tsd-hierarchy" data-refl="76">
+<section class="tsd-panel tsd-hierarchy" data-refl="80">
 <h4>Hierarchy (<a href="../hierarchy.html#PdfToMarkdownOptions">View Summary</a>)</h4>
 <ul class="tsd-hierarchy">
 <li class="tsd-hierarchy-item"><a href="ExtractTextOptions.html" class="tsd-signature-type tsd-kind-interface">ExtractTextOptions</a></li>
@@ -22,7 +22,7 @@
 <ul class="tsd-hierarchy">
 <li class="tsd-hierarchy-item"><span class="tsd-hierarchy-target">PdfToMarkdownOptions</span></li></ul></li></ul></section><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/kmalakoff/pdf-to-md/blob/9db5d32be3ddfe84f812c26cbef43474351900f1/src/extract.ts#L80">extract.ts:80</a></li></ul></aside>
+<li>Defined in <a href="https://github.com/kmalakoff/pdf-to-md/blob/af2f46e59905d3c85defc4677e1bfdf98e665943/src/extract.ts#L82">extract.ts:82</a></li></ul></aside>
 <section class="tsd-panel-group tsd-index-group">
 <section class="tsd-panel tsd-index-panel">
 <details class="tsd-index-content tsd-accordion" open><summary class="tsd-accordion-summary tsd-index-summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>
@@ -53,21 +53,21 @@
 </div><aside class="tsd-sources">
 <p>Inherited from <a href="ExtractOcrOptions.html">ExtractOcrOptions</a>.<a href="ExtractOcrOptions.html#dpi">dpi</a></p>
 <ul>
-<li>Defined in <a href="https://github.com/kmalakoff/pdf-to-md/blob/9db5d32be3ddfe84f812c26cbef43474351900f1/src/extract.ts#L68">extract.ts:68</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/kmalakoff/pdf-to-md/blob/af2f46e59905d3c85defc4677e1bfdf98e665943/src/extract.ts#L70">extract.ts:70</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="noocr"><code class="tsd-tag">Optional</code><span>no<wbr/>Ocr</span><a href="#noocr" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">noOcr</span><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">boolean</span></div>
 <div class="tsd-comment tsd-typography"><p>never fall back to OCR, even for image-only pages</p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/kmalakoff/pdf-to-md/blob/9db5d32be3ddfe84f812c26cbef43474351900f1/src/extract.ts#L84">extract.ts:84</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/kmalakoff/pdf-to-md/blob/af2f46e59905d3c85defc4677e1bfdf98e665943/src/extract.ts#L86">extract.ts:86</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="ocr"><code class="tsd-tag">Optional</code><span>ocr</span><a href="#ocr" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">ocr</span><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">boolean</span></div>
 <div class="tsd-comment tsd-typography"><p>force the OCR path even when a text layer exists</p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/kmalakoff/pdf-to-md/blob/9db5d32be3ddfe84f812c26cbef43474351900f1/src/extract.ts#L82">extract.ts:82</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/kmalakoff/pdf-to-md/blob/af2f46e59905d3c85defc4677e1bfdf98e665943/src/extract.ts#L84">extract.ts:84</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member tsd-is-inherited">
 <h3 class="tsd-anchor-link" id="onprogress"><code class="tsd-tag">Optional</code><span>on<wbr/>Progress</span><a href="#onprogress" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">onProgress</span><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-symbol">(</span><span class="tsd-kind-parameter">e</span><span class="tsd-signature-symbol">:</span> <a href="../types/OcrProgressEvent.html" class="tsd-signature-type tsd-kind-type-alias">OcrProgressEvent</a><span class="tsd-signature-symbol">)</span> <span class="tsd-signature-symbol">=&gt;</span> <span class="tsd-signature-type">void</span></div>
@@ -76,7 +76,7 @@ chatter and the sparse-retry notice arrive via <code>onWarning</code> instead)</
 </div><aside class="tsd-sources">
 <p>Inherited from <a href="ExtractOcrOptions.html">ExtractOcrOptions</a>.<a href="ExtractOcrOptions.html#onprogress">onProgress</a></p>
 <ul>
-<li>Defined in <a href="https://github.com/kmalakoff/pdf-to-md/blob/9db5d32be3ddfe84f812c26cbef43474351900f1/src/extract.ts#L73">extract.ts:73</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/kmalakoff/pdf-to-md/blob/af2f46e59905d3c85defc4677e1bfdf98e665943/src/extract.ts#L75">extract.ts:75</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member tsd-is-inherited">
 <h3 class="tsd-anchor-link" id="onwarning"><code class="tsd-tag">Optional</code><span>on<wbr/>Warning</span><a href="#onwarning" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">onWarning</span><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-symbol">(</span><span class="tsd-kind-parameter">message</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">)</span> <span class="tsd-signature-symbol">=&gt;</span> <span class="tsd-signature-type">void</span></div>
@@ -85,16 +85,16 @@ chatter and the sparse-retry notice arrive via <code>onWarning</code> instead)</
 </div><aside class="tsd-sources">
 <p>Inherited from <a href="ExtractTextOptions.html">ExtractTextOptions</a>.<a href="ExtractTextOptions.html#onwarning">onWarning</a></p>
 <ul>
-<li>Defined in <a href="https://github.com/kmalakoff/pdf-to-md/blob/9db5d32be3ddfe84f812c26cbef43474351900f1/src/extract.ts#L51">extract.ts:51</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/kmalakoff/pdf-to-md/blob/af2f46e59905d3c85defc4677e1bfdf98e665943/src/extract.ts#L50">extract.ts:50</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member tsd-is-inherited">
 <h3 class="tsd-anchor-link" id="onwords"><code class="tsd-tag">Optional</code><span>on<wbr/>Words</span><a href="#onwords" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">onWords</span><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-symbol">(</span><span class="tsd-kind-parameter">words</span><span class="tsd-signature-symbol">:</span> <a href="PageWord.html" class="tsd-signature-type tsd-kind-interface">PageWord</a><span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol">)</span> <span class="tsd-signature-symbol">=&gt;</span> <span class="tsd-signature-type">void</span></div>
-<div class="tsd-comment tsd-typography"><p>every recognized word entering the geometry, delivered once after
-recognition — the severity-1 audit instrument (--debug-words)</p>
+<div class="tsd-comment tsd-typography"><p>source PDF text runs entering layout, delivered once for the selected
+final result. Runs retain measured bounds and are not fabricated words.</p>
 </div><aside class="tsd-sources">
-<p>Inherited from <a href="ExtractOcrOptions.html">ExtractOcrOptions</a>.<a href="ExtractOcrOptions.html#onwords">onWords</a></p>
+<p>Inherited from <a href="ExtractTextOptions.html">ExtractTextOptions</a>.<a href="ExtractTextOptions.html#onwords">onWords</a></p>
 <ul>
-<li>Defined in <a href="https://github.com/kmalakoff/pdf-to-md/blob/9db5d32be3ddfe84f812c26cbef43474351900f1/src/extract.ts#L76">extract.ts:76</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/kmalakoff/pdf-to-md/blob/af2f46e59905d3c85defc4677e1bfdf98e665943/src/extract.ts#L60">extract.ts:60</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member tsd-is-inherited">
 <h3 class="tsd-anchor-link" id="pagemarkers"><code class="tsd-tag">Optional</code><span>page<wbr/>Markers</span><a href="#pagemarkers" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">pageMarkers</span><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">boolean</span></div>
@@ -103,7 +103,7 @@ only — <code>report.pageStats</code> is always populated regardless)</p>
 </div><aside class="tsd-sources">
 <p>Inherited from <a href="ExtractTextOptions.html">ExtractTextOptions</a>.<a href="ExtractTextOptions.html#pagemarkers">pageMarkers</a></p>
 <ul>
-<li>Defined in <a href="https://github.com/kmalakoff/pdf-to-md/blob/9db5d32be3ddfe84f812c26cbef43474351900f1/src/extract.ts#L58">extract.ts:58</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/kmalakoff/pdf-to-md/blob/af2f46e59905d3c85defc4677e1bfdf98e665943/src/extract.ts#L57">extract.ts:57</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member tsd-is-inherited">
 <h3 class="tsd-anchor-link" id="pages"><code class="tsd-tag">Optional</code><span>pages</span><a href="#pages" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">pages</span><span class="tsd-signature-symbol">?:</span> <a href="PageSelection.html" class="tsd-signature-type tsd-kind-interface">PageSelection</a></div>
@@ -112,7 +112,7 @@ whole document</p>
 </div><aside class="tsd-sources">
 <p>Inherited from <a href="ExtractTextOptions.html">ExtractTextOptions</a>.<a href="ExtractTextOptions.html#pages">pages</a></p>
 <ul>
-<li>Defined in <a href="https://github.com/kmalakoff/pdf-to-md/blob/9db5d32be3ddfe84f812c26cbef43474351900f1/src/extract.ts#L48">extract.ts:48</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/kmalakoff/pdf-to-md/blob/af2f46e59905d3c85defc4677e1bfdf98e665943/src/extract.ts#L47">extract.ts:47</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member tsd-is-inherited">
 <h3 class="tsd-anchor-link" id="tuning"><code class="tsd-tag">Optional</code><span>tuning</span><a href="#tuning" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">tuning</span><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">Partial</span><span class="tsd-signature-symbol">&lt;</span><a href="Tuning.html" class="tsd-signature-type tsd-kind-interface">Tuning</a><span class="tsd-signature-symbol">&gt;</span></div>
@@ -121,7 +121,7 @@ DEFAULT_TUNING (<code>src/geometry.ts</code>) for each knob's measured default</
 </div><aside class="tsd-sources">
 <p>Inherited from <a href="ExtractOcrOptions.html">ExtractOcrOptions</a>.<a href="ExtractOcrOptions.html#tuning">tuning</a></p>
 <ul>
-<li>Defined in <a href="https://github.com/kmalakoff/pdf-to-md/blob/9db5d32be3ddfe84f812c26cbef43474351900f1/src/extract.ts#L65">extract.ts:65</a></li></ul></aside></section></section></details></div>
+<li>Defined in <a href="https://github.com/kmalakoff/pdf-to-md/blob/af2f46e59905d3c85defc4677e1bfdf98e665943/src/extract.ts#L67">extract.ts:67</a></li></ul></aside></section></section></details></div>
 <div class="col-sidebar">
 <div class="page-menu">
 <div class="tsd-navigation settings">
