@@ -32,8 +32,7 @@
     "pdf-to-md": "bin/cli.js"
   },
   "files": [
-    "dist",
-    "skills"
+    "dist"
   ],
   "scripts": {
     "build": "tsds build",
