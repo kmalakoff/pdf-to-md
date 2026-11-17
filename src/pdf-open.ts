@@ -12,7 +12,7 @@ import { resolvePackagePath } from './resolve.ts';
 // — the library's documented promise is it never writes to stdout/stderr on its own.
 
 /** Data-based open (collect.ts's seam): no cMaps/fonts — text-layer extraction
- * only, verified to decode CJK correctly. Wraps missing/unreadable and non-PDF files as PdfToMdError/PDF_OPEN. */
+ * only. wasmUrl is set as in openPdfForRender: OCR opens a PDF here first, and without it a CCITTFax page then decodes blank on Windows. Verified to decode CJK correctly. Wraps missing/unreadable and non-PDF files as PdfToMdError/PDF_OPEN. */
 export async function openDocument(src: string): Promise<PDFDocumentProxy> {
   let data: Uint8Array;
   try {
@@ -24,6 +24,7 @@ export async function openDocument(src: string): Promise<PDFDocumentProxy> {
     return await getDocument({
       data,
       useSystemFonts: true,
+      wasmUrl: WASM_URL,
       verbosity: VerbosityLevel.ERRORS,
     }).promise;
   } catch (err) {
