@@ -15,6 +15,10 @@ import { awaitPdfOpen, openPdfForRender } from '../pdf-open.ts';
 import { renderLoadedPage } from '../raster.ts';
 import { resolvePackagePath } from '../resolve.ts';
 
+// tesseract.js writes its decompressed traineddata cache into the user's cwd by
+// default; keep it in the module's fixed home store instead, where the OS never wipes it.
+export const ENGINE_CACHE_DIR = path.join(os.homedir(), '.pdf-to-md', 'engine');
+
 // 288 dpi: the render resolution the engine's word-overlap numbers were
 // measured at (test/fixtures/ocr-engine-poc/) — the known-good operating point.
 export const OCR_RENDER_DPI = 288;
@@ -126,10 +130,7 @@ function withRealStdio<T>(fn: () => T): T {
 /** Recognize words on pages [first..last] of a PDF (renders at `dpi`,
  * default OCR_RENDER_DPI). Progress via `onProgress`; diagnostics via `onWarning` — this module never writes to stdout/stderr itself. */
 export async function recognizePdf(pdfPath: string, first: number, last: number, { dpi = OCR_RENDER_DPI, onProgress, onWarning }: { dpi?: number; onProgress?: (e: OcrProgressEvent) => void; onWarning?: (message: string) => void } = {}): Promise<RecognizeResult> {
-  // tesseract.js writes its decompressed traineddata cache here by default,
-  // dropping a model file into the user's cwd — redirect it under tmpdir() instead.
-  const cachePath = path.join(os.tmpdir(), 'pdf-to-md-engine');
-  mkdirSync(cachePath, { recursive: true });
+  mkdirSync(ENGINE_CACHE_DIR, { recursive: true });
 
   const words: PageWord[] = [];
   const emptyPages: number[] = [];
@@ -142,7 +143,7 @@ export async function recognizePdf(pdfPath: string, first: number, last: number,
     // on the hard benchmark pages (2026-08-16).
     const worker = await createWorker('eng', 1, {
       langPath: TESSDATA_DIR,
-      cachePath,
+      cachePath: ENGINE_CACHE_DIR,
     });
     try {
       // NOT optional: tesseract.js's own default PSM (SINGLE_BLOCK) measured

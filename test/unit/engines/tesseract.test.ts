@@ -5,7 +5,9 @@
 // numbers live in this file, not in the source comment.
 
 import assert from 'node:assert/strict';
-import { SPARSE_RETRY_PROSE_FRACTION, shouldRetrySparse } from '../../../src/engines/tesseract.ts';
+import os from 'node:os';
+import path from 'node:path';
+import { ENGINE_CACHE_DIR, SPARSE_RETRY_PROSE_FRACTION, shouldRetrySparse } from '../../../src/engines/tesseract.ts';
 import { fixturePath } from '../../lib/fixtures.ts';
 import { expectReport, run } from '../../lib/run.ts';
 
@@ -132,5 +134,12 @@ describe('OCR path: ocr-chart-only.pdf (numerals only, no prose — the retry mu
     assert.match(md, /^> \[review: unstructured labels\]/m);
     assert.equal(report.junkHeadings, 0);
     assert.ok(report.reviewBlocks >= 1);
+  });
+});
+
+describe('engine cache (src/engines/tesseract.ts)', () => {
+  it('keeps tesseract language data in ~/.pdf-to-md/engine, not the system temp folder', () => {
+    assert.equal(ENGINE_CACHE_DIR, path.join(os.homedir(), '.pdf-to-md', 'engine'));
+    assert.ok(!ENGINE_CACHE_DIR.startsWith(os.tmpdir()));
   });
 });
