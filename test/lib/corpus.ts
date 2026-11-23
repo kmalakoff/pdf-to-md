@@ -1,13 +1,13 @@
-// corpus.ts — fetch-once cache for the public test corpus: entries are built
-// once per key, staged in `<dest>.building`, and renamed atomically on success; every download is sha256-verified against a pinned hash before the rename.
-import { createHash } from 'node:crypto';
-import { existsSync, mkdirSync, readFileSync, renameSync, rmSync, writeFileSync } from 'node:fs';
+// corpus.ts — fetch-once cache for the public test corpus: staged-cache downloads each entry
+// under a temporary name, verifies its pinned sha256 and renames it into place.
+import { writeFileSync } from 'node:fs';
 import path from 'node:path';
-import { TMP_ROOT } from './tmp.ts';
+import { stagedCache, verifySha256 } from 'staged-cache';
+import { PACKAGE_ROOT } from './tmp.ts';
 
-// Stable key, not a per-run unique dir: entries are fetched once and deliberately
-// reused across runs, so the cache must survive between test invocations.
-export const CACHE_DIR = path.join(TMP_ROOT, 'corpus');
+// Content-named (sha256 in the file name), written under a temporary name and renamed into place,
+// never changed afterwards: one copy, linked into every worktree.
+export const CACHE_DIR = path.join(PACKAGE_ROOT, '.cache', 'shared', 'pdf-to-md');
 
 export interface CorpusEntry {
   /** Cache filename, also the lookup key passed to corpusPath(). */
@@ -98,34 +98,7 @@ export const CORPUS: CorpusEntry[] = [
   },
 ];
 
-export class CorpusChecksumError extends Error {}
-
-/**
- * Fetch-once cache: returns the cached path if present, else calls
- * `build(stagingPath)` and atomically renames it on success — a throw leaves the staging file un-renamed, never masquerading as cached.
- */
-export async function cached(key: string, expectedSha256: string, build: (stagingPath: string) => Promise<void>): Promise<string> {
-  mkdirSync(CACHE_DIR, { recursive: true });
-  const dest = path.join(CACHE_DIR, key);
-  if (existsSync(dest)) {
-    const hash = createHash('sha256').update(readFileSync(dest)).digest('hex');
-    if (hash === expectedSha256) return dest;
-    rmSync(dest, { force: true });
-  }
-
-  const staging = `${dest}.building`;
-  rmSync(staging, { force: true });
-  try {
-    await build(staging);
-    renameSync(staging, dest);
-  } catch (err) {
-    rmSync(staging, { force: true });
-    throw err;
-  }
-  return dest;
-}
-
-async function downloadAndVerify(entry: CorpusEntry, stagingPath: string): Promise<void> {
+async function download(entry: CorpusEntry, stagingPath: string): Promise<void> {
   let res: Response;
   try {
     res = await fetch(entry.url, { signal: AbortSignal.timeout(30_000) });
@@ -135,15 +108,7 @@ async function downloadAndVerify(entry: CorpusEntry, stagingPath: string): Promi
   if (!res.ok) {
     throw new Error(`fetch ${entry.name} <${entry.url}> returned HTTP ${res.status} ${res.statusText}`);
   }
-
-  const buf = Buffer.from(await res.arrayBuffer());
-  // Hash the bytes actually written to disk (not the in-memory buffer), so a mismatch deletes the staging file itself.
-  writeFileSync(stagingPath, buf);
-  const hash = createHash('sha256').update(buf).digest('hex');
-  if (hash !== entry.sha256) {
-    rmSync(stagingPath, { force: true });
-    throw new CorpusChecksumError(`corpus checksum mismatch for ${entry.name}: expected sha256 ${entry.sha256} (${entry.bytes} bytes), got ${hash} (${buf.length} bytes) — upstream file changed or the pinned hash in test/lib/corpus.ts is stale`);
-  }
+  writeFileSync(stagingPath, Buffer.from(await res.arrayBuffer()));
 }
 
 /**
@@ -155,5 +120,6 @@ export async function corpusPath(name: string): Promise<string> {
     throw new Error(`corpusPath: unknown corpus entry ${JSON.stringify(name)} — known: ${CORPUS.map((e) => e.name).join(', ')}`);
   }
 
-  return cached(entry.name, entry.sha256, (staging) => downloadAndVerify(entry, staging));
+  const dest = path.join(CACHE_DIR, `${entry.sha256}-${entry.name}`);
+  return stagedCache(dest, { verify: verifySha256(entry.sha256), build: (staging) => download(entry, staging) });
 }

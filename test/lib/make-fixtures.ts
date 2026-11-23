@@ -957,15 +957,9 @@ async function main() {
     });
   });
 
-  // fixture 12: ocr-chart-only.pdf — numerals ONLY, the end-to-end trigger
-  // for tesseract.ts's adaptive PSM.SPARSE_TEXT retry (SPARSE_RETRY_PROSE_FRACTION); fixture 11 triggers it too but ties on word count, never "sparse wins".
-
-  // Denser/wider (8x5=40 numerals) so PSM.AUTO genuinely under-recognizes
-  // while PSM.SPARSE_TEXT recovers all 40 — mirroring a real chart page's failure mode.
-  // numSize is the knob that holds that gap open, and it is narrow: measured
-  // against the pinned typeface (see canvasFont), 20-26pt lets AUTO read the whole
-  // page on its own (no retry to observe, and at 26 it misreads 61 as 601), while
-  // 14pt starves SPARSE_TEXT too. 18pt sits in the window at AUTO 38 -> SPARSE 40.
+  // fixture 12: ocr-chart-only.pdf — a numeral-only scatter whose output
+  // needs review because it has no reading order. OCR word counts and exact
+  // transcription vary with rasterization, so the fixture does not pin them.
   await writeImagePDF(path.join(outDir, 'ocr-chart-only.pdf'), (s) => {
     const numSize = 18;
     const rows: Array<{ y: number; xs: number[]; nums: string[] }> = [

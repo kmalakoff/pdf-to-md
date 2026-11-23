@@ -5,7 +5,8 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
-export const TMP_ROOT = path.join(here, '..', '..', '.tmp');
+export const PACKAGE_ROOT = path.join(here, '..', '..');
+export const TMP_ROOT = path.join(PACKAGE_ROOT, '.tmp');
 
 /** A fresh uniquely-suffixed directory under TMP_ROOT, for throwaway per-run scratch. */
 export function scratchDir(prefix: string): string {
